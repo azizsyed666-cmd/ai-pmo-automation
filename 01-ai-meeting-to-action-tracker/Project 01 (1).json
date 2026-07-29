@@ -1,0 +1,861 @@
+{
+  "name": "Project 01",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -64,
+        0
+      ],
+      "id": "56802d9b-a4d9-4e76-a9e2-15b9c3e5146e",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "32f43ae0-50f3-4852-bcbd-301f9ee2a4b2",
+              "name": "project_name",
+              "value": "CRM Implementation",
+              "type": "string"
+            },
+            {
+              "id": "b89b9e0b-fffe-42d0-adaf-5bbfd9434496",
+              "name": "meeting_title",
+              "value": "Weekly Project Status Meeting",
+              "type": "string"
+            },
+            {
+              "id": "17972acc-5664-491b-b26a-7a6809dd2c38",
+              "name": "meeting_date",
+              "value": "2026-07-27",
+              "type": "string"
+            },
+            {
+              "id": "8167080b-fb9b-48e3-b640-f0ceed6201b4",
+              "name": "meeting_notes",
+              "value": "The data migration is currently delayed because the source data is not clean.  The IT team will complete the data cleansing by 5 August.  Ahmed will confirm the final migration schedule by 7 August.  The business team approved the new customer onboarding process.  There is a risk that UAT could be delayed if data cleansing is not completed on time.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        160,
+        0
+      ],
+      "id": "13255ce3-a86a-4ef4-a9d5-028d6efcb5cc",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an AI PMO Analyst.\n\nAnalyze the following project meeting information.\n\nExtract:\n\n1. Action items\n2. Decisions\n3. Risks\n4. Issues\n\nFor every action item, identify:\n- Description\n- Owner\n- Due date\n- Priority\n- Status\n\nFor every decision, identify:\n- Decision\n- Date\n\nFor every risk, identify:\n- Description\n- Probability\n- Impact\n- Mitigation\n\nFor every issue, identify:\n- Description\n- Owner\n- Impact\n- Status\n\nDo not invent information.\nIf the owner or due date is not explicitly stated, return null.\n\nReturn valid JSON only.\n\nProject:\n{{ $json.project_name }}\n\nMeeting Title:\n{{ $json.meeting_title }}\n\nMeeting Date:\n{{ $json.meeting_date }}\n\nMeeting Notes:\n{{ $json.meeting_notes }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        384,
+        0
+      ],
+      "id": "e274cb8d-4e27-4ab9-83b7-dc4b84b9e00f",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        384,
+        208
+      ],
+      "id": "9a538083-56ce-4987-a3cf-4d66de9bc512",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "xqs1O62E0wRLzXaP",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nfor (const item of items) {\n  item.json = JSON.parse(item.json.output);\n}\n\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        704,
+        0
+      ],
+      "id": "c606fd41-08d8-47aa-9591-96b1bbcb5fd6",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "action_items",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1008,
+        -288
+      ],
+      "id": "335cc742-ebc4-4da0-974e-d4a7b6502cdf",
+      "name": "Actions sheet"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "decisions",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1008,
+        -112
+      ],
+      "id": "5d42d815-99eb-4902-8d40-c425bb394162",
+      "name": "Decision Log"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "risks",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1008,
+        96
+      ],
+      "id": "a8a757d1-e82c-48bf-9e40-0d664feb1d44",
+      "name": "RAID Log"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "issues",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1008,
+        288
+      ],
+      "id": "5b36704d-10b4-4464-b1b1-aba60165e9c4",
+      "name": "Issue Log"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8",
+          "mode": "list",
+          "cachedResultName": "AI Meeting Tracker",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Actions",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Meeting Title": "={{ $('Edit Fields').first().json.meeting_title }}",
+            "Meeting Date": "={{ $('Edit Fields').first().json.meeting_date }}",
+            "Description": "={{$json.action_items.description}}",
+            "Owner": "={{$json.action_items.owner}}",
+            "Priority": "={{$json.action_items.priority || \"Medium\"}}",
+            "Status": "={{$json.action_items.status || \"Open\"}}",
+            "Due date": "={{$json.action_items.due_date}}",
+            "Project": "={{ $('Edit Fields').first().json.project_name }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Project",
+              "displayName": "Project",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Meeting Title",
+              "displayName": "Meeting Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Meeting Date",
+              "displayName": "Meeting Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Description",
+              "displayName": "Description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Owner",
+              "displayName": "Owner",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Due date",
+              "displayName": "Due date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Priority",
+              "displayName": "Priority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1216,
+        -288
+      ],
+      "id": "3d860d49-fc37-4838-947b-5553c9552540",
+      "name": "Actions",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "hVzXgoE0MmMMCbo6",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8",
+          "mode": "list",
+          "cachedResultName": "AI Meeting Tracker",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1502471963,
+          "mode": "list",
+          "cachedResultName": "Decisions",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit#gid=1502471963"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Project": "=Project {{ $('Edit Fields').first().json.project_name }}",
+            "Meeting Title": "=Meeting Title {{ $('Edit Fields').first().json.meeting_title }}",
+            "Meeting Date": "=Meeting Date {{ $('Edit Fields').first().json.meeting_date }}",
+            "Decision": "={{ $json.decisions.decision }}",
+            "Decision Date": "={{ $json.decisions.date }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Project",
+              "displayName": "Project",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Meeting Title",
+              "displayName": "Meeting Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Meeting Date",
+              "displayName": "Meeting Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Decision",
+              "displayName": "Decision",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Decision Date",
+              "displayName": "Decision Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1216,
+        -112
+      ],
+      "id": "24e42fd0-0931-4c2c-9928-de7fb13f2d8b",
+      "name": "Decisions",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "hVzXgoE0MmMMCbo6",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8",
+          "mode": "list",
+          "cachedResultName": "AI Meeting Tracker",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 438702224,
+          "mode": "list",
+          "cachedResultName": "Risks",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit#gid=438702224"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Project": "=Project {{ $('Edit Fields').first().json.project_name }}",
+            "Meeting Title": "=Meeting Title {{ $('Edit Fields').first().json.meeting_title }}",
+            "Meeting Date": "=Meeting Date {{ $('Edit Fields').first().json.meeting_date }}",
+            "Risk": "={{ $json.risks.description }}",
+            "Probability": "={{ $json.risks.probability || \"Unknown\" }}",
+            "Impact": "={{ $json.risks.impact || \"Unknown\" }}",
+            "Mitigation": "={{ $json.risks.mitigation }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Project",
+              "displayName": "Project",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Meeting Title",
+              "displayName": "Meeting Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Meeting Date",
+              "displayName": "Meeting Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Risk",
+              "displayName": "Risk",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Probability",
+              "displayName": "Probability",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Impact",
+              "displayName": "Impact",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Mitigation",
+              "displayName": "Mitigation",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1216,
+        96
+      ],
+      "id": "e9d8fb3d-220d-40f8-8ee9-ef15ebc071dc",
+      "name": "Risk",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "hVzXgoE0MmMMCbo6",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8",
+          "mode": "list",
+          "cachedResultName": "AI Meeting Tracker",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 240964208,
+          "mode": "list",
+          "cachedResultName": "Issues",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit#gid=240964208"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Project": "={{ $('Edit Fields').first().json.project_name }}",
+            "Meeting Title": "={{ $('Edit Fields').first().json.meeting_title }}",
+            "Meeting Date": "={{ $('Edit Fields').first().json.meeting_date }}",
+            "Issue": "={{ $json.issues.description }}",
+            "Owner": "={{ $json.issues.owner || \"Unassigned\" }}",
+            "Impact": "={{ $json.issues.impact }}",
+            "Status": "={{ $json.issues.status || \"Delayed\" }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Project",
+              "displayName": "Project",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Meeting Title",
+              "displayName": "Meeting Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Meeting Date",
+              "displayName": "Meeting Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Issue",
+              "displayName": "Issue",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Owner",
+              "displayName": "Owner",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Impact",
+              "displayName": "Impact",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1216,
+        288
+      ],
+      "id": "555cfda8-83bb-44dd-b257-0be310a77bde",
+      "name": "Issue",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "hVzXgoE0MmMMCbo6",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "",
+        "height": 784,
+        "width": 1568,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -144,
+        -320
+      ],
+      "typeVersion": 1,
+      "id": "14032367-d3f2-48de-81da-396d68023b6d",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "# Input\n* 📧 Email\n* 🎤 Teams Minutes of meeting/Conversations\n* ⌨ Manual entry\n",
+        "height": 288,
+        "width": 432,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -128,
+        480
+      ],
+      "typeVersion": 1,
+      "id": "c7bdcf64-e0c5-4f11-864a-d749ddfa95d3",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "# AI Processing\n* 🤖 GPT-5 Mini\n* ⚙ JavaScript Parse \n* 📊 JSON Formatter",
+        "height": 288,
+        "width": 528,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        352,
+        480
+      ],
+      "typeVersion": 1,
+      "id": "e0d5f5ae-0dcf-44f3-98f0-0c4839e464f6",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "content": "# Outputs\n* ✅ Action Log\n* ⚠ Risk Log\n* 🚨 Issue Log\n* 📌 Decision Log\n**Future integration**\n* Email confirmation to the Stakeholder\n* Excel tracker\n* Jira/Trello/Clickup\n\n\n",
+        "height": 288,
+        "width": 480,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        928,
+        480
+      ],
+      "typeVersion": 1,
+      "id": "1510af41-61b4-49e3-af16-5045a307b3d3",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "content": "# Project 01 - AI Meeting to Action tracker\nAI-powered meeting minutes parser that extracts Action Items, Decisions, Risks, and Issues from meeting transcripts and automatically updates a Google Sheets RAID log.",
+        "width": 528
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -128,
+        -304
+      ],
+      "typeVersion": 1,
+      "id": "9f050112-7080-430b-ac1d-b28e8304c08c",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "**Structured JSON**",
+        "height": 80,
+        "width": 160,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        576,
+        192
+      ],
+      "typeVersion": 1,
+      "id": "2baaed84-532c-40ca-88f0-f3f8302d4443",
+      "name": "Sticky Note3"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Actions sheet",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Decision Log",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "RAID Log",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Issue Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Actions sheet": {
+      "main": [
+        [
+          {
+            "node": "Actions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decision Log": {
+      "main": [
+        [
+          {
+            "node": "Decisions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RAID Log": {
+      "main": [
+        [
+          {
+            "node": "Risk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Issue Log": {
+      "main": [
+        [
+          {
+            "node": "Issue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "009ef27b-963a-4930-96a2-c0fecc8de281",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ca19ab3d3cdf09f7e55378e9791459a0df6a3c73f10d678dcea7dbd2b88e0b7a"
+  },
+  "nodeGroups": [],
+  "id": "Pc3GgcVUp2sSYD5K",
+  "tags": []
+}
