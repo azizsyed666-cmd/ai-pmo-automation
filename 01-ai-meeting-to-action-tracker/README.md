@@ -13,113 +13,140 @@
 
 The **AI Meeting-to-Action Tracker** is an AI-powered workflow built using **n8n**, **OpenAI GPT-5 Mini**, **JavaScript**, and **Google Sheets** that automates the extraction of project governance information from meeting minutes.
 
-Instead of manually reviewing meeting notes and updating RAID logs, the workflow analyzes meeting content using an AI model, converts the response into structured JSON, and automatically updates dedicated Google Sheets for:
+Instead of manually reviewing meeting notes and updating RAID logs, the workflow analyzes meeting content using an AI model, converts the response into structured JSON, and automatically updates a centralized **AI PMO RAID Register** stored in Google Sheets.
+
+The solution extracts and maintains dedicated registers for:
 
 - Action Items
 - Decisions
 - Risks
 - Issues
 
-This project demonstrates how Large Language Models (LLMs) can automate repetitive PMO activities while improving consistency, traceability, and reporting.
+This project demonstrates how Large Language Models (LLMs) can automate repetitive PMO activities while improving consistency, governance, and traceability.
 
 ---
 
 # 2. Key Features
 
 - AI-powered meeting minutes analysis
-- Automatic extraction of Action Items
-- Automatic extraction of Decisions
-- Automatic extraction of Risks
-- Automatic extraction of Issues
+- Automatic Action Item extraction
+- Automatic Decision extraction
+- Automatic Risk extraction
+- Automatic Issue extraction
 - Structured JSON generation
+- JavaScript data transformation
 - Google Sheets integration
+- AI PMO RAID Register
 - Modular workflow design
-- Easily extendable to Jira, ClickUp, Microsoft Teams, and Power BI
+- Easily extendable to Jira, Microsoft Teams, SharePoint, Power BI and ClickUp
 
 ---
 
 # 3. Business Problem
 
-Project Managers and PMOs spend significant time reviewing meeting minutes and manually updating governance documents such as Action Logs, Decision Logs, Risk Registers, and Issue Registers.
+Project Managers and PMOs spend significant time reviewing meeting minutes and manually updating governance documents including:
 
-Manual documentation creates several challenges:
+- Action Logs
+- Decision Logs
+- Risk Registers
+- Issue Registers
 
-- Time-consuming administrative work
-- Inconsistent meeting documentation
-- Human error when capturing actions and decisions
-- Delayed stakeholder communication
-- Outdated RAID logs
-- Limited visibility across projects
+This manual process:
 
-This project automates the extraction and documentation process using AI, reducing manual effort while improving consistency and governance.
+- Consumes valuable project management time
+- Produces inconsistent documentation
+- Introduces human error
+- Delays stakeholder reporting
+- Creates outdated RAID logs
+- Reduces project visibility
 
 ---
 
 # 4. Business Value
 
-This solution helps organizations:
+This solution enables organizations to:
 
-- Reduce manual meeting documentation effort
-- Standardize RAID log management
-- Improve project governance
-- Increase accountability through structured action tracking
+- Reduce manual documentation effort
+- Standardize RAID management
+- Improve governance consistency
+- Increase accountability
 - Accelerate stakeholder reporting
-- Provide a scalable foundation for AI-powered PMO automation
+- Create structured project data for future AI analysis
 
 ---
 
-# 5. Solution Architecture
+# 5. Solution Components
+
+The solution consists of five major components:
+
+1. n8n Workflow
+2. OpenAI GPT-5 Mini
+3. JavaScript JSON Processing
+4. AI PMO RAID Register (Google Sheets)
+5. GitHub Repository
+
+The Google Sheets workbook acts as the centralized project governance repository and will be reused by future AI PMO automation projects.
+
+---
+
+# 6. Solution Architecture
 
 ![Solution Architecture](images/architecture.png)
 
-The workflow follows these steps:
+Workflow:
 
-1. Receive meeting minutes.
-2. Send the transcript to GPT-5 Mini.
-3. Extract Actions, Decisions, Risks, and Issues.
-4. Convert the AI response into structured JSON.
-5. Update dedicated Google Sheets.
-6. Prepare the solution for future enterprise integrations.
+1. Capture meeting information
+2. Send meeting minutes to GPT-5 Mini
+3. Extract Actions, Decisions, Risks and Issues
+4. Convert AI response into structured JSON
+5. Generate unique record identifiers
+6. Update the AI PMO RAID Register
 
 ---
 
-# 6. Workflow Diagram
+# 7. Workflow Diagram
 
-![n8n Workflow](images/workflow.png)
+![Workflow](images/workflow.png)
 
 ## Workflow Steps
 
 1. Manual Trigger
-2. Capture meeting information
-3. AI analysis using GPT-5 Mini
-4. JavaScript JSON transformation
-5. Update Action Log
-6. Update Decision Log
-7. Update Risk Register
-8. Update Issue Register
+2. Edit Fields
+3. OpenAI GPT-5 Mini
+4. AI Agent
+5. JavaScript Parser
+6. Generate Record IDs
+7. Update Actions Sheet
+8. Update Decisions Sheet
+9. Update Risks Sheet
+10. Update Issues Sheet
 
 ---
 
-# 7. Project Statistics
+# 8. Project Statistics
 
 | Metric | Value |
 |---------|------:|
 | Workflow Nodes | 11 |
-| AI Models | GPT-5 Mini |
+| AI Model | GPT-5 Mini |
 | Programming Language | JavaScript |
 | Integrations | Google Sheets |
-| Output Types | 4 |
+| Output Registers | 4 |
 | Development Environment | Docker + n8n |
 
 ---
 
-# 8. Execution Flow
+# 9. Execution Flow
 
 ```text
 Meeting Minutes
         │
         ▼
-GPT-5 Mini Analysis
+Edit Fields
+(Project Metadata)
+        │
+        ▼
+OpenAI GPT-5 Mini
         │
         ▼
 Structured JSON
@@ -128,42 +155,129 @@ Structured JSON
 JavaScript Processing
         │
         ▼
-Google Sheets
+AI PMO RAID Register
         │
-        ├── Action Log
-        ├── Decision Log
-        ├── Risk Register
-        └── Issue Register
-        │
-        ▼
-Future Integrations
+        ├── Actions
+        ├── Decisions
+        ├── Risks
+        └── Issues
 ```
 
 ---
 
-# 9. Tech Stack
+# 10. Tech Stack
 
-| Technology | Purpose | Why Used |
-|------------|---------|----------|
-| n8n | Workflow Automation | Low-code workflow orchestration |
-| OpenAI GPT-5 Mini | AI Processing | Meeting information extraction |
-| JavaScript | Data Transformation | JSON parsing and processing |
-| Google Sheets | Data Storage | RAID log repository |
-| Docker Desktop | Development | Local self-hosted environment |
-| GitHub | Version Control | Source code management |
+| Technology | Purpose |
+|------------|---------|
+| n8n | Workflow Automation |
+| OpenAI GPT-5 Mini | AI Information Extraction |
+| JavaScript | JSON Processing |
+| Google Sheets | RAID Register |
+| Docker Desktop | Local Development |
+| GitHub | Version Control |
 
 ---
 
-# 10. Repository Structure
+# 11. Google Sheets Structure
+
+## Actions
+
+| Column |
+|---------|
+| Action ID |
+| Project ID |
+| Project |
+| Meeting Title |
+| Meeting Date |
+| Description |
+| Owner |
+| Due Date |
+| Priority |
+| Status |
+| Completion Date |
+| Days Overdue |
+| Escalation Status |
+| Created Date |
+| Last Updated |
+
+---
+
+## Decisions
+
+| Column |
+|---------|
+| Decision ID |
+| Project ID |
+| Project |
+| Meeting Title |
+| Meeting Date |
+| Decision |
+| Decision Date |
+| Decision Owner |
+| Status |
+| Created Date |
+| Last Updated |
+
+---
+
+## Risks
+
+| Column |
+|---------|
+| Risk ID |
+| Project ID |
+| Project |
+| Meeting Title |
+| Meeting Date |
+| Risk Description |
+| Probability |
+| Impact |
+| Mitigation |
+| Risk Owner |
+| Status |
+| Risk Score |
+| Risk Rating |
+| Last Review Date |
+| Next Review Date |
+| Created Date |
+| Last Updated |
+
+---
+
+## Issues
+
+| Column |
+|---------|
+| Issue ID |
+| Project ID |
+| Project |
+| Meeting Title |
+| Meeting Date |
+| Issue Description |
+| Owner |
+| Impact |
+| Status |
+| Resolution |
+| Severity |
+| Created Date |
+| Last Updated |
+
+---
+
+# 12. Repository Structure
 
 ```text
 01-ai-meeting-to-action-tracker/
 │
 ├── README.md
+├── LICENSE
 │
 ├── images/
 │   ├── architecture.png
-│   └── workflow.png
+│   ├── workflow.png
+│   ├── ai-output.png
+│   ├── workflow-execution.png
+│   └── google-sheets-output.png
 │
 └── workflow/
     └── meeting-to-action.json
@@ -171,21 +285,21 @@ Future Integrations
 
 ---
 
-# 11. n8n Workflow
+# 13. n8n Workflow
 
-The workflow consists of the following nodes:
+Workflow Nodes
 
 - Manual Trigger
 - Edit Fields
 - OpenAI Chat Model
 - AI Agent
 - JavaScript Parser
-- Google Sheets – Action Log
-- Google Sheets – Decision Log
-- Google Sheets – Risk Register
-- Google Sheets – Issue Register
+- Google Sheets – Actions
+- Google Sheets – Decisions
+- Google Sheets – Risks
+- Google Sheets – Issues
 
-Workflow Export:
+Workflow Export
 
 ```text
 workflow/meeting-to-action.json
@@ -193,9 +307,7 @@ workflow/meeting-to-action.json
 
 ---
 
-# 12. Sample Input
-
-Example meeting minutes:
+# 14. Sample Input
 
 ```text
 CRM implementation is progressing well.
@@ -212,30 +324,42 @@ Test environment credentials are still unavailable.
 
 ---
 
-# 13. Sample AI Output
+# 15. Sample AI Output
 
 ```json
 {
-  "actions": [
+  "project": "CRM Implementation",
+  "meeting_title": "Weekly Project Status Meeting",
+  "meeting_date": "2026-07-27",
+  "action_items": [
     {
+      "description": "Finalize API integration",
       "owner": "John",
-      "task": "Finalize API integration",
-      "due_date": "Friday"
+      "due_date": "2026-08-01",
+      "priority": "High",
+      "status": "Open"
     }
   ],
   "decisions": [
     {
-      "decision": "Approved revised implementation schedule"
+      "decision": "Approved revised implementation schedule",
+      "date": "2026-07-27"
     }
   ],
   "risks": [
     {
-      "risk": "Vendor hardware delivery delay"
+      "description": "Vendor hardware delivery may delay testing",
+      "probability": "Medium",
+      "impact": "Testing schedule may slip",
+      "mitigation": "Closely monitor supplier deliveries"
     }
   ],
   "issues": [
     {
-      "issue": "Test environment credentials unavailable"
+      "description": "Test environment credentials unavailable",
+      "owner": "Infrastructure Team",
+      "impact": "Testing cannot begin",
+      "status": "Open"
     }
   ]
 }
@@ -243,20 +367,14 @@ Test environment credentials are still unavailable.
 
 ---
 
-# 14. Google Sheets Output
+# 16. Google Sheets Output
 
-The workflow automatically updates four governance registers:
+The workflow automatically updates the centralized **AI PMO RAID Register**, consisting of:
 
-- ✅ Action Log
-- ✅ Decision Log
-- ✅ Risk Register
-- ✅ Issue Register
-
-> **Screenshot Placeholder**
-
-Insert a screenshot showing the populated Google Sheets after workflow execution.
-
-Example:
+- ✅ Actions
+- ✅ Decisions
+- ✅ Risks
+- ✅ Issues
 
 ```markdown
 ![Google Sheets Output](images/google-sheets-output.png)
@@ -264,9 +382,7 @@ Example:
 
 ---
 
-# 15. Skills Demonstrated
-
-This project demonstrates practical experience with:
+# 17. Skills Demonstrated
 
 - AI Workflow Automation
 - Prompt Engineering
@@ -277,47 +393,62 @@ This project demonstrates practical experience with:
 - Google Workspace Integration
 - Process Automation
 - PMO Governance
-- Git & GitHub
 - Docker
+- Git & GitHub
 - AI Solution Design
 
 ---
 
-# 16. Lessons Learned
+# 18. Lessons Learned
 
-Key learnings from this project include:
+This project provided practical experience in:
 
-- Designing AI workflows using n8n
-- Prompt engineering for structured information extraction
-- Transforming AI responses into structured JSON
+- Designing AI-powered workflows
+- Prompt engineering for structured outputs
+- Transforming AI responses into JSON
 - Integrating OpenAI with Google Sheets
-- Building reusable automation components
-- Applying AI to automate PMO governance processes
-- Managing workflow versioning using GitHub
+- Creating reusable workflow components
+- Building scalable PMO automation
+- Version controlling AI workflows using GitHub
 
 ---
 
-# 17. Future Improvements
+# 19. Future Improvements
 
-Planned enhancements include:
+Future enhancements include:
 
 - Microsoft Teams transcript ingestion
+- Voice recording transcription
 - Outlook email integration
-- Automatic stakeholder email summaries
-- Jira issue creation
-- ClickUp task creation
+- Automated meeting summaries
+- Jira integration
+- ClickUp integration
 - Monday.com integration
 - SharePoint integration
-- Power BI dashboard integration
+- Power BI dashboards
 - AI confidence scoring
 - Duplicate action detection
-- Action owner notifications
+- Automatic owner notifications
 - Due-date reminders
-- Meeting summary generation
 
 ---
 
-# 18. Author
+# 20. Next Project
+
+## Project 02 – AI RAID Log Automation
+
+Project 02 extends this solution by using the **AI PMO RAID Register** created in Project 01 to:
+
+- Monitor overdue actions
+- Detect stale risks and issues
+- Calculate governance metrics
+- Generate executive RAID reports
+- Recommend AI-powered mitigation actions
+- Produce project health insights
+
+---
+
+# 21. Author
 
 **Syed A Aziz**
 
@@ -327,6 +458,6 @@ Dubai, United Arab Emirates
 
 ---
 
-# Repository
+# Portfolio
 
-This project is part of the **AI PMO Automation Portfolio**, a collection of practical AI-powered automation solutions demonstrating how Large Language Models can improve Project Management Office (PMO) processes through workflow automation, intelligent information extraction, and executive reporting.
+This project is part of the **AI PMO Automation Portfolio**, a collection of practical AI-powered automation solutions demonstrating how Large Language Models can improve Project Management Office (PMO) processes through workflow automation, intelligent information extraction, governance automation, and executive reporting.
