@@ -1,0 +1,1717 @@
+{
+  "name": "Project 02 – AI RAID Log Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        80,
+        192
+      ],
+      "id": "6f467eba-5691-4f6c-af6e-7f9a4797cbc9",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "xqs1O62E0wRLzXaP",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.project_update }}",
+        "options": {
+          "systemMessage": "You are a PMO governance assistant.\n\nAnalyze the project update and extract all Risks, Assumptions, Issues, and Dependencies.\n\nReturn only valid JSON using this exact structure:\n\n{\n  \"project\": \"\",\n  \"risks\": [\n    {\n      \"title\": \"\",\n      \"description\": \"\",\n      \"probability\": \"Low|Medium|High\",\n      \"impact\": \"Low|Medium|High\",\n      \"priority\": \"Low|Medium|High|Critical\",\n      \"owner\": \"\",\n      \"due_date\": \"\",\n      \"mitigation\": \"\",\n      \"status\": \"Open\"\n    }\n  ],\n  \"assumptions\": [\n    {\n      \"title\": \"\",\n      \"description\": \"\",\n      \"owner\": \"\",\n      \"due_date\": \"\",\n      \"status\": \"Open\"\n    }\n  ],\n  \"issues\": [\n    {\n      \"title\": \"\",\n      \"description\": \"\",\n      \"priority\": \"Low|Medium|High|Critical\",\n      \"owner\": \"\",\n      \"due_date\": \"\",\n      \"resolution\": \"\",\n      \"status\": \"Open\"\n    }\n  ],\n  \"dependencies\": [\n    {\n      \"title\": \"\",\n      \"description\": \"\",\n      \"owner\": \"\",\n      \"due_date\": \"\",\n      \"status\": \"Open\"\n    }\n  ]\n}\n\nRules:\n- Return only valid JSON.\n- Do not use markdown code blocks.\n- Do not include explanations.\n- Use an empty string when information is unavailable.\n- Do not invent names, owners, dates, or facts.\n- Put each item in only one RAID category.\n- For every RAID description, copy the relevant source sentence exactly.\nDo not paraphrase or rewrite the description.\nUse consistent titles for identical input."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        80,
+        -16
+      ],
+      "id": "f2b488ef-bcac-49e0-ba16-671c66e3adb8",
+      "name": "AI Agent - Extract RAID"
+    },
+    {
+      "parameters": {
+        "jsCode": "const rawOutput = $json.output;\n\nif (!rawOutput) {\n  throw new Error('AI Agent returned no output.');\n}\n\nlet cleanedOutput = rawOutput.trim()\n  .replace(/^```json\\s*/i, '')\n  .replace(/^```\\s*/i, '')\n  .replace(/\\s*```$/i, '');\n\ntry {\n  const parsed = JSON.parse(cleanedOutput);\n\n  return {\n    json: {\n      project_id: $('Sample Project Update').item.json.project_id,\n      ...parsed,\n    },\n  };\n} catch (error) {\n  throw new Error(`Invalid JSON returned by AI Agent: ${error.message}`);\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        -16
+      ],
+      "id": "4656d3e4-3edc-4a76-a74b-c01f7ddd8e14",
+      "name": "Code-Parse RAID JSON"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6dc5de01-19b4-49cc-9534-d9fa35c3d446",
+              "name": "risk_alert_key",
+              "value": "={{ $json.risk_key + '-' + $json.risk_rating.toLowerCase() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1056,
+        -288
+      ],
+      "id": "2205d504-3055-465d-8786-9149f8dc3c90",
+      "name": "Generate Risk Alert Key"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5a959182-80d7-4929-a051-f7114199225c",
+              "name": "{{   (     $json.project_id + '-' + $json.risks.description   )   .toLowerCase()   .replace(/[^a-z0-9]+/g, '-')   .replace(/^-|-$/g, '') }}",
+              "value": "={{ 'RSK-' + $now.toFormat('yyyyLLddHHmmss') + '-' + ($itemIndex + 1).toString().padStart(2, '0') }}",
+              "type": "string"
+            },
+            {
+              "id": "5774e799-d197-4bd6-a2b1-ae0ce3390e61",
+              "name": "risk_score",
+              "value": "={{   (     { Low: 1, Medium: 2, High: 3 }[$json.risks.probability] || 0   ) *   (     { Low: 1, Medium: 2, High: 3 }[$json.risks.impact] || 0   ) }}",
+              "type": "string"
+            },
+            {
+              "id": "61886e03-c8aa-4194-b7f4-88e378372412",
+              "name": "risk_rating",
+              "value": "={{\n  (() => {\n    const probability = { Low: 1, Medium: 2, High: 3 }[$json.risks.probability] || 0;\n    const impact = { Low: 1, Medium: 2, High: 3 }[$json.risks.impact] || 0;\n    const score = probability * impact;\n\n    if (score === 9) return 'Critical';\n    if (score >= 6) return 'High';\n    if (score >= 3) return 'Medium';\n    return 'Low';\n  })()\n}}",
+              "type": "string"
+            },
+            {
+              "id": "47c15856-a83a-45c5-a303-85bfd1b1a30a",
+              "name": "risk_key",
+              "value": "={{   (     $json.project_id + '-' + $json.risks.title   )   .toLowerCase()   .replace(/[^a-z0-9]+/g, '-')   .replace(/^-|-$/g, '') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        848,
+        -288
+      ],
+      "id": "32f61b07-6d4f-443d-b361-adcab31c6e98",
+      "name": "Generate Risk ID"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        -16
+      ],
+      "id": "f1273d79-8c34-4540-8cfd-066a5f7840fc",
+      "name": "Manual Trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e2a20516-3c17-40bc-8489-981ddc4d0962",
+              "name": "project_update",
+              "value": "Project: CRM Implementation  The vendor has confirmed that the production servers may be delivered five days late, which could delay system testing.  The project team assumes that the customer data migration files will be provided by 5 August 2026.  The Finance department has not yet approved the additional integration budget, and development work is currently blocked.  User acceptance testing depends on completion of the CRM and SAP integration.  The Infrastructure Manager will follow up with the vendor by 2 August 2026.",
+              "type": "string"
+            },
+            {
+              "id": "5f999fa7-c10c-481b-8d05-9b2b69d85e22",
+              "name": "project_id",
+              "value": "PRJ-001",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -112,
+        -16
+      ],
+      "id": "95839237-874d-48a0-9ec2-6c03e3ac45fe",
+      "name": "Sample Project Update"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "risks",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        640,
+        -288
+      ],
+      "id": "22f90f18-688d-4910-b4b4-8363603a2a01",
+      "name": "Split Risk"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "assumptions",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        640,
+        -128
+      ],
+      "id": "285cf2bc-1cb3-4b9c-b61f-028fb56d1ed6",
+      "name": "Split Assumptions"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "issues",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        640,
+        80
+      ],
+      "id": "2d2e17c3-bd9e-42cc-82fb-5c02f713df16",
+      "name": "Split Issues"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "dependencies",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        640,
+        272
+      ],
+      "id": "b55f3ebb-8090-4fbe-a94a-ce9e8130a879",
+      "name": "Split Dependencies"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c99f3d99-fb76-43f4-8a24-536b5d53da18",
+              "name": "assumption_id",
+              "value": "={{ 'ASM-' + $now.toFormat('yyyyLLddHHmmss') + '-' + ($itemIndex + 1).toString().padStart(2, '0') }}",
+              "type": "string"
+            },
+            {
+              "id": "0b4acc6c-bcb7-4932-9775-8f0cc3441859",
+              "name": "assumption_key",
+              "value": "={{ ($json.project_id + '-' + $json.assumptions.title)   .toLowerCase()   .replace(/[^a-z0-9]+/g, '-')   .replace(/^-|-$/g, '') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        848,
+        -128
+      ],
+      "id": "e0efa6e5-77f6-45e4-b7aa-097f2a5de651",
+      "name": "Generate Assumption Key"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8",
+          "mode": "list",
+          "cachedResultName": "AI PMO RAID Register",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 768099757,
+          "mode": "list",
+          "cachedResultName": "Assumptions",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit#gid=768099757"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Project": "={{ $json.project }}",
+            "Status": "={{ $json.assumptions.status }}",
+            "Created Date": "={{ $now.toISODate() }}",
+            "Project ID": "={{ $json.project_id }}",
+            "Assumption Title": "={{ $json.assumptions.title }}",
+            "Assumption Description": "={{ $json.assumptions.description }}",
+            "Owner": "={{ $json.assumptions.owner }}",
+            "Due Date": "={{ $json.assumptions.due_date }}",
+            "Assumption ID": "={{ $json.assumption_id }}",
+            "Last Updated": "={{ $now.toISODate() }}",
+            "Last Review Date": "={{ $now.toISODate() }}",
+            "Next Review Date": "={{ $now.plus({ days: 7 }).toISODate() }}",
+            "Assumption Key": "={{ $json.assumption_key }}"
+          },
+          "matchingColumns": [
+            "Assumption ID"
+          ],
+          "schema": [
+            {
+              "id": "Assumption ID",
+              "displayName": "Assumption ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Project ID",
+              "displayName": "Project ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Project",
+              "displayName": "Project",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Meeting Title",
+              "displayName": "Meeting Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Meeting Date",
+              "displayName": "Meeting Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Validation Result",
+              "displayName": "Validation Result",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Assumption Title",
+              "displayName": "Assumption Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Assumption Description",
+              "displayName": "Assumption Description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Owner",
+              "displayName": "Owner",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Due Date",
+              "displayName": "Due Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Created Date",
+              "displayName": "Created Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Last Updated",
+              "displayName": "Last Updated",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Closure Date",
+              "displayName": "Closure Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Last Review Date",
+              "displayName": "Last Review Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Next Review Date",
+              "displayName": "Next Review Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Assumption Key",
+              "displayName": "Assumption Key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1264,
+        -128
+      ],
+      "id": "b161fcc6-6096-405f-a2a2-be2bcd96513a",
+      "name": "Upsert Assumption record",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "hVzXgoE0MmMMCbo6",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8",
+          "mode": "list",
+          "cachedResultName": "AI PMO RAID Register",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 240964208,
+          "mode": "list",
+          "cachedResultName": "Issues",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit#gid=240964208"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Project ID": "={{ $json.project_id }}",
+            "Project": "={{ $json.project }}",
+            "Issue Description": "={{ $json.issues.description }}",
+            "Owner": "={{ $json.issues.owner }}",
+            "Status": "={{ $json.issues.status }}",
+            "Resolution": "={{ $json.issues.resolution }}",
+            "Severity": "={{ $json.issues.priority }}",
+            "Created Date": "={{ $now.toISODate() }}",
+            "Last Updated": "={{ $now.toISODate() }}",
+            "Issue Title": "={{ $json.issues.title }}",
+            "Issue ID": "={{ $json.issue_id }}",
+            "Issue Key": "={{ $json.issue_key }}"
+          },
+          "matchingColumns": [
+            "Issue ID"
+          ],
+          "schema": [
+            {
+              "id": "Issue ID",
+              "displayName": "Issue ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Project ID",
+              "displayName": "Project ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Project",
+              "displayName": "Project",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Issue Title",
+              "displayName": "Issue Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Meeting Title",
+              "displayName": "Meeting Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Meeting Date",
+              "displayName": "Meeting Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Issue Description",
+              "displayName": "Issue Description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Owner",
+              "displayName": "Owner",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Impact",
+              "displayName": "Impact",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Resolution",
+              "displayName": "Resolution",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Severity",
+              "displayName": "Severity",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Created Date",
+              "displayName": "Created Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Last Updated",
+              "displayName": "Last Updated",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Issue Key",
+              "displayName": "Issue Key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1264,
+        80
+      ],
+      "id": "609f0d96-5336-4813-b7c0-73a7e610dbfd",
+      "name": "Upsert issue record",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "hVzXgoE0MmMMCbo6",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8",
+          "mode": "list",
+          "cachedResultName": "AI PMO RAID Register",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1957782544,
+          "mode": "list",
+          "cachedResultName": "Dependencies",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit#gid=1957782544"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Project ID": "={{ $json.project_id }}",
+            "Project": "={{ $json.project }}",
+            "Owner": "={{ $json.dependencies.owner }}",
+            "Status": "={{ $json.dependencies.status }}",
+            "Created Date": "={{ $now.toISODate() }}",
+            "Last Updated": "={{ $now.toISODate() }}",
+            "Dependency Title": "={{ $json.dependencies.title }}",
+            "Dependency Description": "={{ $json.dependencies.description }}",
+            "Due Date": "={{ $json.dependencies.due_date }}",
+            "Next Review Date": "={{ $now.plus({ days: 7 }).toISODate() }}",
+            "Dependency ID": "={{ $json.dependency_id }}",
+            "Last Review Date": "={{ $now.toISODate() }}",
+            "Dependency Key": "={{ $json.dependency_key }}"
+          },
+          "matchingColumns": [
+            "Dependency ID"
+          ],
+          "schema": [
+            {
+              "id": "Dependency ID",
+              "displayName": "Dependency ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Project ID",
+              "displayName": "Project ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Project",
+              "displayName": "Project",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Dependency Title",
+              "displayName": "Dependency Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Dependency Description",
+              "displayName": "Dependency Description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Owner",
+              "displayName": "Owner",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Due Date",
+              "displayName": "Due Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Created Date",
+              "displayName": "Created Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Last Updated",
+              "displayName": "Last Updated",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Last Review Date",
+              "displayName": "Last Review Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Next Review Date",
+              "displayName": "Next Review Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Dependency Key",
+              "displayName": "Dependency Key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1264,
+        272
+      ],
+      "id": "86ec918d-a487-4d75-805b-97c5ee0e08af",
+      "name": "Upsert Dependency Record",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "hVzXgoE0MmMMCbo6",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d0e2b9ea-d95e-4ace-8aaa-0a7b9253d3c7",
+              "name": "issue_id",
+              "value": "={{ 'ISS-' + $now.toFormat('yyyyLLddHHmmss') + '-' + ($itemIndex + 1).toString().padStart(2, '0') }}",
+              "type": "string"
+            },
+            {
+              "id": "d7c555d3-0f03-4923-a894-ddfc47daec7e",
+              "name": "issue_key",
+              "value": "={{ ($json.project_id + '-' + $json.issues.title)   .toLowerCase()   .replace(/[^a-z0-9]+/g, '-')   .replace(/^-|-$/g, '') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        848,
+        80
+      ],
+      "id": "60c9f6f5-fb45-4761-8cf7-7fe1be84c5c6",
+      "name": "Generate Issue Key"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1e442172-b19a-42c2-af73-3dd1f821df47",
+              "name": "dependency_id",
+              "value": "={{ 'DEP-' + $now.toFormat('yyyyLLddHHmmss') + '-' + ($itemIndex + 1).toString().padStart(2, '0') }}",
+              "type": "string"
+            },
+            {
+              "id": "9e20d063-ffc5-4856-aac9-4f34b3923d99",
+              "name": "dependency_key",
+              "value": "={{ ($json.project_id + '-' + $json.dependencies.title)   .toLowerCase()   .replace(/[^a-z0-9]+/g, '-')   .replace(/^-|-$/g, '') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        848,
+        272
+      ],
+      "id": "81bfb561-6d0c-46a9-9da3-7d03d5920706",
+      "name": "Generate Dependency Key"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8",
+          "mode": "list",
+          "cachedResultName": "AI PMO RAID Register",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 438702224,
+          "mode": "list",
+          "cachedResultName": "Risks",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit#gid=438702224"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Project": "={{ $json.project }}",
+            "Risk Description": "={{ $json.risks.description }}",
+            "Probability": "={{ $json.risks.probability }}",
+            "Impact": "={{ $json.risks.impact }}",
+            "Risk Owner": "={{ $json.risks.owner }}",
+            "Status": "={{ $json.risks.status }}",
+            "Risk Score": "={{ $json.risk_score }}",
+            "Last Review Date": "={{ $now.toISODate() }}",
+            "Created Date": "={{ $now.toISODate() }}",
+            "Last Updated": "={{ $now.toISODate() }}",
+            "Next Review Date": "={{ $now.plus({ days: 7 }).toISODate() }}",
+            "Mitigation": "={{ $json.risks.mitigation }}",
+            "Risk Rating": "={{ $json.risk_rating }}",
+            "Risk Title": "={{ $json.risks.title }}",
+            "Project ID": "={{ $json.project_id }}",
+            "Risk ID": "={{ $json.risk_id }}",
+            "Risk Key": "={{ $json.risk_key }}"
+          },
+          "matchingColumns": [
+            "Risk Key"
+          ],
+          "schema": [
+            {
+              "id": "Risk ID",
+              "displayName": "Risk ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Project ID",
+              "displayName": "Project ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Project",
+              "displayName": "Project",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Meeting Title",
+              "displayName": "Meeting Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Meeting Date",
+              "displayName": "Meeting Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Risk Description",
+              "displayName": "Risk Description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Probability",
+              "displayName": "Probability",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Impact",
+              "displayName": "Impact",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Mitigation",
+              "displayName": "Mitigation",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Risk Owner",
+              "displayName": "Risk Owner",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Risk Score",
+              "displayName": "Risk Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Risk Rating",
+              "displayName": "Risk Rating",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Last Review Date",
+              "displayName": "Last Review Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Next Review Date",
+              "displayName": "Next Review Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Created Date",
+              "displayName": "Created Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Last Updated",
+              "displayName": "Last Updated",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Risk Title",
+              "displayName": "Risk Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Risk Key",
+              "displayName": "Risk Key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1264,
+        -288
+      ],
+      "id": "a6cb6c0d-0b5a-4975-8525-c5093a31173d",
+      "name": "Upsert Risk Record",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "hVzXgoE0MmMMCbo6",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "4d6414f9-0902-499a-a82b-39af8761dacb",
+              "leftValue": "={{ $json[\"Risk Rating\"] }}",
+              "rightValue": "High",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "847af685-2898-4de4-b5af-f40e7d9f372f",
+              "leftValue": "={{ $json[\"Risk Rating\"] }}",
+              "rightValue": "Critical",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "looseTypeValidation": "=",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1472,
+        -288
+      ],
+      "id": "084db635-2d71-4216-b4ef-e28eee607dd0",
+      "name": "Check High/Critical Risk"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8",
+          "mode": "list",
+          "cachedResultName": "AI PMO RAID Register",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1110915873,
+          "mode": "list",
+          "cachedResultName": "Alert Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit#gid=1110915873"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Alert Key",
+              "lookupValue": "={{ $(\"Generate Risk Alert Key\").item.json.risk_alert_key }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1680,
+        -304
+      ],
+      "id": "635dadfc-93c8-45d0-a54e-58702af89e79",
+      "name": "Search Alert Log",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "hVzXgoE0MmMMCbo6",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "3224a6db-2a11-4ec6-b4b5-ef8594a7cc35",
+              "leftValue": "={{ $json[\"Alert Key\"] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1888,
+        -304
+      ],
+      "id": "e843c266-c78f-4f5f-a2a6-f95fe19e5380",
+      "name": "Check if Alert Already Sent"
+    },
+    {
+      "parameters": {
+        "sendTo": "aziz.syed06@gmail.com",
+        "subject": "=[RAID Alert] {{ $(\"Upsert Risk Record\").item.json[\"Risk Rating\"] }} Risk – {{ $(\"Upsert Risk Record\").item.json[\"Risk Title\"] }}",
+        "message": "=A high-priority project risk requires attention.\n\nProject ID: {{ $(\"Upsert Risk Record\").item.json[\"Project ID\"] }}\nProject: {{ $(\"Upsert Risk Record\").item.json[\"Project\"] }}\nRisk ID: {{ $(\"Upsert Risk Record\").item.json[\"Risk ID\"] }}\nRisk Title: {{ $(\"Upsert Risk Record\").item.json[\"Risk Title\"] }}\nDescription: {{ $(\"Upsert Risk Record\").item.json[\"Risk Description\"] }}\nProbability: {{ $(\"Upsert Risk Record\").item.json[\"Probability\"] }}\nImpact: {{ $(\"Upsert Risk Record\").item.json[\"Impact\"] }}\nRisk Score: {{ $(\"Upsert Risk Record\").item.json[\"Risk Score\"] }}\nRisk Rating: {{ $(\"Upsert Risk Record\").item.json[\"Risk Rating\"] }}\nOwner: {{ $(\"Upsert Risk Record\").item.json[\"Risk Owner\"] }}\nMitigation: {{ $(\"Upsert Risk Record\").item.json[\"Mitigation\"] }}\nStatus: {{ $(\"Upsert Risk Record\").item.json[\"Status\"] }}\nNext Review Date: {{ $(\"Upsert Risk Record\").item.json[\"Next Review Date\"] }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2112,
+        -320
+      ],
+      "id": "4a395e93-315f-44a0-8cdf-d8e17b3c4a5a",
+      "name": "Send Risk Alert Email",
+      "webhookId": "51ef277d-509a-4884-8b38-d2db42b81703",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "1B4OTuHX3KHjQQ5m",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8",
+          "mode": "list",
+          "cachedResultName": "AI PMO RAID Register",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1110915873,
+          "mode": "list",
+          "cachedResultName": "Alert Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit#gid=1110915873"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Alert Key": "={{ $(\"Generate Risk Alert Key\").item.json.risk_alert_key }}",
+            "Project ID": "={{ $(\"Generate Risk ID\").item.json.project_id }}",
+            "Recipient": "aziz.syed06@gmail.com",
+            "Alert Date": "={{ $now.toISO() }}",
+            "Rating": "={{ $(\"Generate Risk ID\").item.json.risk_rating }}",
+            "Title": "={{ $(\"Generate Risk ID\").item.json.risks.title }}",
+            "Raid Type": "Risk",
+            "Raid ID": "={{ $(\"Generate Risk ID\").item.json.risk_id }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Alert Key",
+              "displayName": "Alert Key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Project ID",
+              "displayName": "Project ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Raid ID",
+              "displayName": "Raid ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Raid Type",
+              "displayName": "Raid Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Title",
+              "displayName": "Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Rating",
+              "displayName": "Rating",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Alert Date",
+              "displayName": "Alert Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Recipient",
+              "displayName": "Recipient",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2320,
+        -320
+      ],
+      "id": "0be7bf9d-46a6-4f42-b5f0-93bfd6f82d84",
+      "name": "Log Risk Alert",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "hVzXgoE0MmMMCbo6",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent - Extract RAID",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent - Extract RAID": {
+      "main": [
+        [
+          {
+            "node": "Code-Parse RAID JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code-Parse RAID JSON": {
+      "main": [
+        [
+          {
+            "node": "Split Risk",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Split Assumptions",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Split Issues",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Split Dependencies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Risk Alert Key": {
+      "main": [
+        [
+          {
+            "node": "Upsert Risk Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Risk ID": {
+      "main": [
+        [
+          {
+            "node": "Generate Risk Alert Key",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Sample Project Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sample Project Update": {
+      "main": [
+        [
+          {
+            "node": "AI Agent - Extract RAID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Risk": {
+      "main": [
+        [
+          {
+            "node": "Generate Risk ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Assumptions": {
+      "main": [
+        [
+          {
+            "node": "Generate Assumption Key",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Issues": {
+      "main": [
+        [
+          {
+            "node": "Generate Issue Key",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Dependencies": {
+      "main": [
+        [
+          {
+            "node": "Generate Dependency Key",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Assumption Key": {
+      "main": [
+        [
+          {
+            "node": "Upsert Assumption record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Assumption record": {
+      "main": [
+        []
+      ]
+    },
+    "Generate Issue Key": {
+      "main": [
+        [
+          {
+            "node": "Upsert issue record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Dependency Key": {
+      "main": [
+        [
+          {
+            "node": "Upsert Dependency Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Risk Record": {
+      "main": [
+        [
+          {
+            "node": "Check High/Critical Risk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check High/Critical Risk": {
+      "main": [
+        [
+          {
+            "node": "Search Alert Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Alert Log": {
+      "main": [
+        [
+          {
+            "node": "Check if Alert Already Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check if Alert Already Sent": {
+      "main": [
+        [
+          {
+            "node": "Send Risk Alert Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Risk Alert Email": {
+      "main": [
+        [
+          {
+            "node": "Log Risk Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "cfefb199-65f8-4897-8e25-ce28dd615d78",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ca19ab3d3cdf09f7e55378e9791459a0df6a3c73f10d678dcea7dbd2b88e0b7a"
+  },
+  "nodeGroups": [],
+  "id": "ErFMnrIhUxb2I00N",
+  "tags": []
+}
