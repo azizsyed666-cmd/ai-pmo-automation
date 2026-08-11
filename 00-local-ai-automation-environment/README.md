@@ -47,15 +47,18 @@ This allows n8n data to persist beyond the lifecycle of an individual Docker con
 
 The persistent volume is important because workflows, configuration, credentials, and other n8n application data should not rely only on the temporary container filesystem.
 
-### 3. N8n Deployment
+### 3. N8n Deployment (Revised)
 n8n was deployed using Docker:
 Bash
-docker run -it --rm \
-  --name n8n \
+docker run -d --name n8n \
   -p 5678:5678 \
-  -v n8n_data:/home/node/.n8n \
   -e N8N_SECURE_COOKIE=false \
-  docker.n8n.io/n8nio/n8n
+  -e GENERIC_TIMEZONE=Asia/Dubai \
+  -e TZ=Asia/Dubai \
+  -e N8N_RESTRICT_FILE_ACCESS_TO=/tmp \
+  -e NODE_FUNCTION_ALLOW_BUILTIN=fs,child_process \
+  -v n8n_data:/home/node/.n8n \
+  n8n-custom
 
 | Configuration   | Value             |
 | --------------- | ----------------- |
