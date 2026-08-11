@@ -1,0 +1,1611 @@
+{
+  "name": "Project 03-AI Project Health Scoring",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "f05ad4aa-d33f-48f0-8169-97a698069e4b",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8",
+          "mode": "list",
+          "cachedResultName": "AI PMO RAID Register",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Actions",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        208,
+        0
+      ],
+      "id": "b3b79881-0da6-455b-b370-f0b23951238a",
+      "name": "01 - Read Actions",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "hVzXgoE0MmMMCbo6",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(item => item.json);\n\nconst today = new Date();\n\n// Use UAE local date instead of UTC\nconst assessmentDate = new Intl.DateTimeFormat('en-CA', {\n  timeZone: 'Asia/Dubai',\n  year: 'numeric',\n  month: '2-digit',\n  day: '2-digit'\n}).format(today);\n\nconst normalize = value =>\n  String(value ?? '').trim().toLowerCase();\n\nconst parseDate = value => {\n  if (!value) return null;\n\n  const date = new Date(value);\n\n  if (Number.isNaN(date.getTime())) {\n    return null;\n  }\n\n  date.setHours(0, 0, 0, 0);\n  return date;\n};\n\n// Set today's date to midnight for overdue comparisons\nconst todayForComparison = new Date(\n  today.getFullYear(),\n  today.getMonth(),\n  today.getDate()\n);\n\nconst openActions = rows.filter(row => {\n  const status = normalize(row.Status);\n\n  return ![\n    'completed',\n    'closed',\n    'cancelled',\n    'canceled'\n  ].includes(status);\n});\n\nconst overdueActions = openActions.filter(row => {\n  const dueDate = parseDate(row['Due Date']);\n\n  return dueDate && dueDate < todayForComparison;\n});\n\nconst highPriorityOverdue = overdueActions.filter(row => {\n  const priority = normalize(row.Priority);\n\n  return ['high', 'critical'].includes(priority);\n});\n\nconst actionsWithoutOwner = openActions.filter(row => {\n  return !String(row.Owner ?? '').trim();\n});\n\nconst overduePercentage =\n  openActions.length > 0\n    ? (overdueActions.length / openActions.length) * 100\n    : 0;\n\nconst ownershipPercentage =\n  openActions.length > 0\n    ? (actionsWithoutOwner.length / openActions.length) * 100\n    : 0;\n\nlet overduePenalty = 0;\n\nif (overduePercentage > 50) {\n  overduePenalty = 50;\n} else if (overduePercentage > 30) {\n  overduePenalty = 40;\n} else if (overduePercentage > 20) {\n  overduePenalty = 30;\n} else if (overduePercentage > 10) {\n  overduePenalty = 20;\n} else if (overduePercentage > 0) {\n  overduePenalty = 10;\n}\n\nconst highPriorityPenalty = Math.min(\n  highPriorityOverdue.length * 10,\n  30\n);\n\nlet ownershipPenalty = 0;\n\nif (ownershipPercentage > 30) {\n  ownershipPenalty = 20;\n} else if (ownershipPercentage > 10) {\n  ownershipPenalty = 10;\n} else if (ownershipPercentage > 0) {\n  ownershipPenalty = 5;\n}\n\nconst actionScore = Math.max(\n  0,\n  100 -\n    overduePenalty -\n    highPriorityPenalty -\n    ownershipPenalty\n);\n\nreturn [\n  {\n    json: {\n      assessment_date: assessmentDate,\n      total_actions: rows.length,\n      open_actions: openActions.length,\n      overdue_actions: overdueActions.length,\n      overdue_percentage: Number(overduePercentage.toFixed(2)),\n      high_priority_overdue_actions: highPriorityOverdue.length,\n      actions_without_owner: actionsWithoutOwner.length,\n      overdue_penalty: overduePenalty,\n      high_priority_penalty: highPriorityPenalty,\n      ownership_penalty: ownershipPenalty,\n      action_score: actionScore\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "130fbac3-6881-4f9f-a34c-21fde5cd8737",
+      "name": "02 - Calculate Action Health"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8",
+          "mode": "list",
+          "cachedResultName": "AI PMO RAID Register",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 438702224,
+          "mode": "list",
+          "cachedResultName": "Risks",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit#gid=438702224"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        624,
+        0
+      ],
+      "id": "eb4eb822-70ed-41e8-a779-a53135f0f365",
+      "name": "03 - Read Risk",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "hVzXgoE0MmMMCbo6",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const risks = $input.all().map(item => item.json);\n\nconst now = new Date();\n\nconst assessmentDate = new Intl.DateTimeFormat('en-CA', {\n  timeZone: 'Asia/Dubai',\n  year: 'numeric',\n  month: '2-digit',\n  day: '2-digit'\n}).format(now);\n\nconst normalize = value =>\n  String(value ?? '').trim().toLowerCase();\n\nconst parseDate = value => {\n  if (!value) return null;\n\n  const date = new Date(value);\n\n  if (Number.isNaN(date.getTime())) {\n    return null;\n  }\n\n  date.setHours(0, 0, 0, 0);\n  return date;\n};\n\nconst todayForComparison = new Date(\n  now.getFullYear(),\n  now.getMonth(),\n  now.getDate()\n);\n\nconst isPlaceholder = value => {\n  const text = normalize(value);\n\n  return (\n    !text ||\n    text === 'tbd' ||\n    text === 'to be defined' ||\n    text === 'mitigation to be defined' ||\n    text === 'none' ||\n    text === 'n/a'\n  );\n};\n\nconst openRisks = risks.filter(risk => {\n  const status = normalize(risk.Status);\n\n  return ![\n    'closed',\n    'resolved',\n    'cancelled',\n    'canceled'\n  ].includes(status);\n});\n\nconst highRisks = openRisks.filter(risk => {\n  const rating = normalize(risk['Risk Rating']);\n\n  return ['high', 'critical'].includes(rating);\n});\n\nconst risksWithoutMitigation = openRisks.filter(risk => {\n  return isPlaceholder(risk.Mitigation);\n});\n\nconst staleRisks = openRisks.filter(risk => {\n  const nextReviewDate = parseDate(risk['Next Review Date']);\n\n  return nextReviewDate && nextReviewDate < todayForComparison;\n});\n\nconst highRiskPenalty = Math.min(\n  highRisks.length * 15,\n  45\n);\n\nconst mitigationPenalty = Math.min(\n  risksWithoutMitigation.length * 10,\n  30\n);\n\nconst staleRiskPenalty = Math.min(\n  staleRisks.length * 5,\n  20\n);\n\nconst riskScore = Math.max(\n  0,\n  100 -\n    highRiskPenalty -\n    mitigationPenalty -\n    staleRiskPenalty\n);\n\nreturn [\n  {\n    json: {\n      assessment_date: assessmentDate,\n      total_risks: risks.length,\n      open_risks: openRisks.length,\n      high_risks: highRisks.length,\n      risks_without_mitigation: risksWithoutMitigation.length,\n      stale_risks: staleRisks.length,\n      high_risk_penalty: highRiskPenalty,\n      mitigation_penalty: mitigationPenalty,\n      stale_risk_penalty: staleRiskPenalty,\n      risk_score: riskScore\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        0
+      ],
+      "id": "7976b893-3db5-4406-9cf1-2f8b39faa04d",
+      "name": "04 - Calculate Risk Health"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8",
+          "mode": "list",
+          "cachedResultName": "AI PMO RAID Register",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 240964208,
+          "mode": "list",
+          "cachedResultName": "Issues",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit#gid=240964208"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1056,
+        0
+      ],
+      "id": "eec2c7f3-d06c-40ad-b229-ffb6d96f3d8c",
+      "name": "05 - Read Issues",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "hVzXgoE0MmMMCbo6",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(item => item.json);\n\nconst now = new Date();\n\nconst assessmentDate = new Intl.DateTimeFormat('en-CA', {\n  timeZone: 'Asia/Dubai',\n  year: 'numeric',\n  month: '2-digit',\n  day: '2-digit'\n}).format(now);\n\nconst normalize = value =>\n  String(value ?? '').trim().toLowerCase();\n\nconst isPlaceholder = value => {\n  const text = normalize(value);\n\n  return (\n    !text ||\n    text === 'tbd' ||\n    text === 'to be assigned' ||\n    text === 'unassigned' ||\n    text === 'n/a' ||\n    text === 'none'\n  );\n};\n\nconst parseDate = value => {\n  if (!value) return null;\n\n  const date = new Date(value);\n\n  if (Number.isNaN(date.getTime())) {\n    return null;\n  }\n\n  return date;\n};\n\n// --------------------------------------------------\n// 1. Deduplicate issues using Issue Key\n// --------------------------------------------------\n\nconst uniqueIssueMap = new Map();\n\nfor (const issue of rows) {\n  const issueKey =\n    String(issue['Issue Key'] ?? '').trim() ||\n    String(issue['Issue ID'] ?? '').trim();\n\n  if (!issueKey) {\n    continue;\n  }\n\n  // Keep first occurrence\n  if (!uniqueIssueMap.has(issueKey)) {\n    uniqueIssueMap.set(issueKey, issue);\n  }\n}\n\nconst issues = Array.from(uniqueIssueMap.values());\n\nconst duplicateIssuesRemoved =\n  rows.length - issues.length;\n\n// --------------------------------------------------\n// 2. Identify open issues\n// --------------------------------------------------\n\nconst openIssues = issues.filter(issue => {\n  const status = normalize(issue.Status);\n\n  return ![\n    'closed',\n    'resolved',\n    'cancelled',\n    'canceled'\n  ].includes(status);\n});\n\n// --------------------------------------------------\n// 3. Critical issues\n// --------------------------------------------------\n\nconst criticalIssues = openIssues.filter(issue => {\n  const severity = normalize(issue.Severity);\n\n  return severity === 'critical';\n});\n\n// --------------------------------------------------\n// 4. Issues without owners\n// --------------------------------------------------\n\nconst issuesWithoutOwner = openIssues.filter(issue => {\n  return isPlaceholder(issue.Owner);\n});\n\n// --------------------------------------------------\n// 5. Stale issues\n//    Open issue not updated for more than 7 days\n// --------------------------------------------------\n\nconst staleIssues = openIssues.filter(issue => {\n  const lastUpdated = parseDate(issue['Last Updated']);\n\n  if (!lastUpdated) {\n    return false;\n  }\n\n  const ageInDays =\n    (now.getTime() - lastUpdated.getTime()) /\n    (1000 * 60 * 60 * 24);\n\n  return ageInDays > 7;\n});\n\n// --------------------------------------------------\n// 6. Penalties\n// --------------------------------------------------\n\nconst criticalIssuePenalty = Math.min(\n  criticalIssues.length * 30,\n  60\n);\n\nconst ownershipPenalty = Math.min(\n  issuesWithoutOwner.length * 10,\n  20\n);\n\nconst staleIssuePenalty = Math.min(\n  staleIssues.length * 10,\n  20\n);\n\n// --------------------------------------------------\n// 7. Final Issue Health Score\n// --------------------------------------------------\n\nconst issueScore = Math.max(\n  0,\n  100 -\n    criticalIssuePenalty -\n    ownershipPenalty -\n    staleIssuePenalty\n);\n\n// --------------------------------------------------\n// 8. Output\n// --------------------------------------------------\n\nreturn [\n  {\n    json: {\n      assessment_date: assessmentDate,\n\n      source_issue_rows: rows.length,\n      unique_issues: issues.length,\n      duplicate_issues_removed: duplicateIssuesRemoved,\n\n      open_issues: openIssues.length,\n      critical_issues: criticalIssues.length,\n      issues_without_owner: issuesWithoutOwner.length,\n      stale_issues: staleIssues.length,\n\n      critical_issue_penalty: criticalIssuePenalty,\n      ownership_penalty: ownershipPenalty,\n      stale_issue_penalty: staleIssuePenalty,\n\n      issue_score: issueScore\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        0
+      ],
+      "id": "c4650e99-7172-40db-809a-df5f7135f2e5",
+      "name": "06 - Calculate Issue Health"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8",
+          "mode": "list",
+          "cachedResultName": "AI PMO RAID Register",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1957782544,
+          "mode": "list",
+          "cachedResultName": "Dependencies",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit#gid=1957782544"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1536,
+        -48
+      ],
+      "id": "3b98b2e9-d070-4ca6-9895-1217c16ca6c2",
+      "name": "07 - Read Dependencies",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "hVzXgoE0MmMMCbo6",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(item => item.json);\n\nconst now = new Date();\n\nconst assessmentDate = new Intl.DateTimeFormat('en-CA', {\n  timeZone: 'Asia/Dubai',\n  year: 'numeric',\n  month: '2-digit',\n  day: '2-digit'\n}).format(now);\n\nconst normalize = value =>\n  String(value ?? '').trim().toLowerCase();\n\nconst isPlaceholder = value => {\n  const text = normalize(value);\n\n  return (\n    !text ||\n    text === 'tbd' ||\n    text === 'to be assigned' ||\n    text === 'unassigned' ||\n    text === 'n/a' ||\n    text === 'none'\n  );\n};\n\nconst parseDate = value => {\n  if (!value) return null;\n\n  const date = new Date(value);\n\n  if (Number.isNaN(date.getTime())) {\n    return null;\n  }\n\n  date.setHours(0, 0, 0, 0);\n  return date;\n};\n\nconst todayForComparison = new Date(\n  now.getFullYear(),\n  now.getMonth(),\n  now.getDate()\n);\n\n// --------------------------------------------------\n// 1. Deduplicate dependencies\n// --------------------------------------------------\n\nconst uniqueDependencyMap = new Map();\n\nfor (const dependency of rows) {\n  const key =\n    String(dependency['Dependency Key'] ?? '').trim() ||\n    String(dependency['Dependency ID'] ?? '').trim();\n\n  if (!key) continue;\n\n  // Keep first occurrence\n  if (!uniqueDependencyMap.has(key)) {\n    uniqueDependencyMap.set(key, dependency);\n  }\n}\n\nconst dependencies = Array.from(\n  uniqueDependencyMap.values()\n);\n\nconst duplicatesRemoved =\n  rows.length - dependencies.length;\n\n// --------------------------------------------------\n// 2. Open dependencies\n// --------------------------------------------------\n\nconst openDependencies = dependencies.filter(dep => {\n  const status = normalize(dep.Status);\n\n  return ![\n    'closed',\n    'completed',\n    'resolved',\n    'cancelled',\n    'canceled'\n  ].includes(status);\n});\n\n// --------------------------------------------------\n// 3. Overdue dependencies\n// --------------------------------------------------\n\nconst overdueDependencies = openDependencies.filter(dep => {\n  const dueDate = parseDate(dep['Due Date']);\n\n  return dueDate && dueDate < todayForComparison;\n});\n\n// --------------------------------------------------\n// 4. Dependencies without due date\n// --------------------------------------------------\n\nconst dependenciesWithoutDueDate =\n  openDependencies.filter(dep => {\n    return !parseDate(dep['Due Date']);\n  });\n\n// --------------------------------------------------\n// 5. Dependencies without owner\n// --------------------------------------------------\n\nconst dependenciesWithoutOwner =\n  openDependencies.filter(dep => {\n    return isPlaceholder(dep.Owner);\n  });\n\n// --------------------------------------------------\n// 6. Stale dependencies\n//    Next Review Date has passed\n// --------------------------------------------------\n\nconst staleDependencies = openDependencies.filter(dep => {\n  const nextReviewDate =\n    parseDate(dep['Next Review Date']);\n\n  return (\n    nextReviewDate &&\n    nextReviewDate < todayForComparison\n  );\n});\n\n// --------------------------------------------------\n// 7. Penalties\n// --------------------------------------------------\n\nconst overduePenalty = Math.min(\n  overdueDependencies.length * 20,\n  40\n);\n\nconst missingDueDatePenalty = Math.min(\n  dependenciesWithoutDueDate.length * 10,\n  20\n);\n\nconst ownershipPenalty = Math.min(\n  dependenciesWithoutOwner.length * 10,\n  20\n);\n\nconst stalePenalty = Math.min(\n  staleDependencies.length * 5,\n  20\n);\n\n// --------------------------------------------------\n// 8. Dependency Health Score\n// --------------------------------------------------\n\nconst dependencyScore = Math.max(\n  0,\n  100 -\n    overduePenalty -\n    missingDueDatePenalty -\n    ownershipPenalty -\n    stalePenalty\n);\n\n// --------------------------------------------------\n// 9. Output\n// --------------------------------------------------\n\nreturn [\n  {\n    json: {\n      assessment_date: assessmentDate,\n\n      source_dependency_rows: rows.length,\n      unique_dependencies: dependencies.length,\n      duplicate_dependencies_removed: duplicatesRemoved,\n\n      open_dependencies: openDependencies.length,\n      overdue_dependencies: overdueDependencies.length,\n      dependencies_without_due_date:\n        dependenciesWithoutDueDate.length,\n      dependencies_without_owner:\n        dependenciesWithoutOwner.length,\n      stale_dependencies:\n        staleDependencies.length,\n\n      overdue_penalty: overduePenalty,\n      missing_due_date_penalty: missingDueDatePenalty,\n      ownership_penalty: ownershipPenalty,\n      stale_penalty: stalePenalty,\n\n      dependency_score: dependencyScore\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1728,
+        0
+      ],
+      "id": "f2b262cc-c23f-4a2c-b25a-535267b0e76d",
+      "name": "08 - Calculate Dependency Health"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8",
+          "mode": "list",
+          "cachedResultName": "AI PMO RAID Register",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 768099757,
+          "mode": "list",
+          "cachedResultName": "Assumptions",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit#gid=768099757"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1952,
+        0
+      ],
+      "id": "9888e34f-fd30-4e19-b70a-97aab89f0749",
+      "name": "09 - Read Assumptions",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "hVzXgoE0MmMMCbo6",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(item => item.json);\n\nconst now = new Date();\n\nconst assessmentDate = new Intl.DateTimeFormat('en-CA', {\n  timeZone: 'Asia/Dubai',\n  year: 'numeric',\n  month: '2-digit',\n  day: '2-digit'\n}).format(now);\n\nconst normalize = value =>\n  String(value ?? '').trim().toLowerCase();\n\nconst isPlaceholder = value => {\n  const text = normalize(value);\n\n  return (\n    !text ||\n    text === 'tbd' ||\n    text === 'to be assigned' ||\n    text === 'unassigned' ||\n    text === 'n/a' ||\n    text === 'none'\n  );\n};\n\nconst parseDate = value => {\n  if (!value) return null;\n\n  const date = new Date(value);\n\n  if (Number.isNaN(date.getTime())) {\n    return null;\n  }\n\n  date.setHours(0, 0, 0, 0);\n  return date;\n};\n\nconst todayForComparison = new Date(\n  now.getFullYear(),\n  now.getMonth(),\n  now.getDate()\n);\n\n// --------------------------------------------------\n// 1. Deduplicate assumptions\n// --------------------------------------------------\n\nconst uniqueAssumptionMap = new Map();\n\nfor (const assumption of rows) {\n  const key =\n    String(assumption['Assumption Key'] ?? '').trim() ||\n    String(assumption['Assumption ID'] ?? '').trim();\n\n  if (!key) continue;\n\n  if (!uniqueAssumptionMap.has(key)) {\n    uniqueAssumptionMap.set(key, assumption);\n  }\n}\n\nconst assumptions = Array.from(\n  uniqueAssumptionMap.values()\n);\n\nconst duplicatesRemoved =\n  rows.length - assumptions.length;\n\n// --------------------------------------------------\n// 2. Open assumptions\n// --------------------------------------------------\n\nconst openAssumptions = assumptions.filter(assumption => {\n  const status = normalize(assumption.Status);\n\n  return ![\n    'closed',\n    'validated',\n    'resolved',\n    'cancelled',\n    'canceled'\n  ].includes(status);\n});\n\n// --------------------------------------------------\n// 3. Overdue assumptions\n// --------------------------------------------------\n\nconst overdueAssumptions = openAssumptions.filter(assumption => {\n  const dueDate = parseDate(assumption['Due Date']);\n\n  return dueDate && dueDate < todayForComparison;\n});\n\n// --------------------------------------------------\n// 4. Assumptions without owner\n// --------------------------------------------------\n\nconst assumptionsWithoutOwner =\n  openAssumptions.filter(assumption => {\n    return isPlaceholder(assumption.Owner);\n  });\n\n// --------------------------------------------------\n// 5. Unvalidated assumptions\n// --------------------------------------------------\n\nconst unvalidatedAssumptions =\n  openAssumptions.filter(assumption => {\n    return isPlaceholder(\n      assumption['Validation Result']\n    );\n  });\n\n// --------------------------------------------------\n// 6. Stale assumptions\n// --------------------------------------------------\n\nconst staleAssumptions =\n  openAssumptions.filter(assumption => {\n    const nextReviewDate =\n      parseDate(assumption['Next Review Date']);\n\n    return (\n      nextReviewDate &&\n      nextReviewDate < todayForComparison\n    );\n  });\n\n// --------------------------------------------------\n// 7. Penalties\n// --------------------------------------------------\n\nconst overduePenalty = Math.min(\n  overdueAssumptions.length * 20,\n  40\n);\n\nconst ownershipPenalty = Math.min(\n  assumptionsWithoutOwner.length * 10,\n  20\n);\n\nconst validationPenalty = Math.min(\n  unvalidatedAssumptions.length * 15,\n  30\n);\n\nconst stalePenalty = Math.min(\n  staleAssumptions.length * 10,\n  20\n);\n\n// --------------------------------------------------\n// 8. Assumption Health Score\n// --------------------------------------------------\n\nconst assumptionScore = Math.max(\n  0,\n  100 -\n    overduePenalty -\n    ownershipPenalty -\n    validationPenalty -\n    stalePenalty\n);\n\n// --------------------------------------------------\n// 9. Output\n// --------------------------------------------------\n\nreturn [\n  {\n    json: {\n      assessment_date: assessmentDate,\n\n      source_assumption_rows: rows.length,\n      unique_assumptions: assumptions.length,\n      duplicate_assumptions_removed: duplicatesRemoved,\n\n      open_assumptions: openAssumptions.length,\n      overdue_assumptions: overdueAssumptions.length,\n      assumptions_without_owner:\n        assumptionsWithoutOwner.length,\n      unvalidated_assumptions:\n        unvalidatedAssumptions.length,\n      stale_assumptions:\n        staleAssumptions.length,\n\n      overdue_penalty: overduePenalty,\n      ownership_penalty: ownershipPenalty,\n      validation_penalty: validationPenalty,\n      stale_penalty: stalePenalty,\n\n      assumption_score: assumptionScore\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2112,
+        0
+      ],
+      "id": "cb68d1c5-2779-4806-8390-b0e5a4900e1a",
+      "name": "10 - Calculate Assumption Health"
+    },
+    {
+      "parameters": {
+        "numberInputs": 4
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        2128,
+        480
+      ],
+      "id": "00e9e8ba-b319-4778-a024-ad5c48db11b5",
+      "name": "11 - Merge RAID Components"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all().map(item => item.json);\n\n// Combine all four health component outputs\nconst data = Object.assign({}, ...items);\n\nconst riskScore = Number(data.risk_score ?? 0);\nconst issueScore = Number(data.issue_score ?? 0);\nconst dependencyScore = Number(data.dependency_score ?? 0);\nconst assumptionScore = Number(data.assumption_score ?? 0);\n\n// RAID weighting\nconst raidScore = Math.round(\n  riskScore * 0.35 +\n  issueScore * 0.35 +\n  dependencyScore * 0.20 +\n  assumptionScore * 0.10\n);\n\n// Base RAG status\nlet calculatedRaidStatus;\n\nif (raidScore >= 80) {\n  calculatedRaidStatus = 'Green';\n} else if (raidScore >= 60) {\n  calculatedRaidStatus = 'Amber';\n} else {\n  calculatedRaidStatus = 'Red';\n}\n\n// Critical issue override\nconst criticalIssues =\n  Number(data.critical_issues ?? 0);\n\nconst criticalOverride =\n  criticalIssues > 0;\n\nconst finalRaidStatus =\n  criticalOverride\n    ? 'Red'\n    : calculatedRaidStatus;\n\nreturn [\n  {\n    json: {\n      assessment_date: data.assessment_date,\n\n      risk_score: riskScore,\n      issue_score: issueScore,\n      dependency_score: dependencyScore,\n      assumption_score: assumptionScore,\n\n      risk_weight: 35,\n      issue_weight: 35,\n      dependency_weight: 20,\n      assumption_weight: 10,\n\n      raid_score: raidScore,\n\n      calculated_raid_status:\n        calculatedRaidStatus,\n\n      critical_issues: criticalIssues,\n      critical_override: criticalOverride,\n\n      raid_status: finalRaidStatus\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2400,
+        208
+      ],
+      "id": "456d9c59-b8e6-4fdc-9182-ce9e7fa846a5",
+      "name": "12 - Calculate RAID Health"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8",
+          "mode": "list",
+          "cachedResultName": "AI PMO RAID Register",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 709378710,
+          "mode": "list",
+          "cachedResultName": "Schedule",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit#gid=709378710"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2624,
+        112
+      ],
+      "id": "670f9d7e-c2ed-4340-b5bb-f69b7a86bbda",
+      "name": "13 - Read Schedule",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "hVzXgoE0MmMMCbo6",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(item => item.json);\n\nconst now = new Date();\n\nconst assessmentDate = new Intl.DateTimeFormat('en-CA', {\n  timeZone: 'Asia/Dubai',\n  year: 'numeric',\n  month: '2-digit',\n  day: '2-digit'\n}).format(now);\n\nconst normalize = value =>\n  String(value ?? '').trim().toLowerCase();\n\nconst parseDate = value => {\n  if (!value) return null;\n\n  // Handles YYYY-MM-DD reliably\n  const match = String(value).match(\n    /^(\\d{4})-(\\d{2})-(\\d{2})$/\n  );\n\n  if (match) {\n    return new Date(\n      Number(match[1]),\n      Number(match[2]) - 1,\n      Number(match[3])\n    );\n  }\n\n  const date = new Date(value);\n\n  if (Number.isNaN(date.getTime())) {\n    return null;\n  }\n\n  return date;\n};\n\nconst [assessmentYear, assessmentMonth, assessmentDay] =\n  assessmentDate.split('-').map(Number);\n\nconst today = new Date(\n  assessmentYear,\n  assessmentMonth - 1,\n  assessmentDay\n);\n\nconst daysBetween = (start, end) => {\n  const millisecondsPerDay =\n    1000 * 60 * 60 * 24;\n\n  return Math.round(\n    (end.getTime() - start.getTime()) /\n    millisecondsPerDay\n  );\n};\n\n// --------------------------------------------------\n// 1. Deduplicate milestones by Milestone ID\n// --------------------------------------------------\n\nconst uniqueMilestoneMap = new Map();\n\nfor (const milestone of rows) {\n  const key =\n    String(milestone['Milestone ID'] ?? '').trim() ||\n    String(milestone.Milestone ?? '').trim();\n\n  if (!key) continue;\n\n  if (!uniqueMilestoneMap.has(key)) {\n    uniqueMilestoneMap.set(key, milestone);\n  }\n}\n\nconst milestones = Array.from(\n  uniqueMilestoneMap.values()\n);\n\nconst duplicatesRemoved =\n  rows.length - milestones.length;\n\n// --------------------------------------------------\n// 2. Completed and open milestones\n// --------------------------------------------------\n\nconst completedMilestones = milestones.filter(milestone => {\n  return normalize(milestone.Status) === 'completed';\n});\n\nconst openMilestones = milestones.filter(milestone => {\n  return normalize(milestone.Status) !== 'completed';\n});\n\n// --------------------------------------------------\n// 3. Overdue milestones\n// --------------------------------------------------\n\nconst overdueMilestones = openMilestones.filter(milestone => {\n  const plannedDate =\n    parseDate(milestone['Planned Date']);\n\n  return plannedDate && plannedDate < today;\n});\n\n// --------------------------------------------------\n// 4. Critical path milestones\n// --------------------------------------------------\n\nconst criticalMilestones = milestones.filter(milestone => {\n  return normalize(\n    milestone['Critical Path']\n  ) === 'yes';\n});\n\nconst criticalOverdueMilestones =\n  overdueMilestones.filter(milestone => {\n    return normalize(\n      milestone['Critical Path']\n    ) === 'yes';\n  });\n\n// --------------------------------------------------\n// 5. Forecast slippage\n// --------------------------------------------------\n\nconst forecastDelayedMilestones =\n  openMilestones.filter(milestone => {\n    const plannedDate =\n      parseDate(milestone['Planned Date']);\n\n    const forecastDate =\n      parseDate(milestone['Forecast Date']);\n\n    if (!plannedDate || !forecastDate) {\n      return false;\n    }\n\n    return forecastDate > plannedDate;\n  });\n\nconst forecastDelayDays =\n  forecastDelayedMilestones.map(milestone => {\n    const plannedDate =\n      parseDate(milestone['Planned Date']);\n\n    const forecastDate =\n      parseDate(milestone['Forecast Date']);\n\n    return daysBetween(\n      plannedDate,\n      forecastDate\n    );\n  });\n\nconst averageForecastDelayDays =\n  forecastDelayDays.length > 0\n    ? forecastDelayDays.reduce(\n        (sum, days) => sum + days,\n        0\n      ) / forecastDelayDays.length\n    : 0;\n\nconst maximumForecastDelayDays =\n  forecastDelayDays.length > 0\n    ? Math.max(...forecastDelayDays)\n    : 0;\n\n// --------------------------------------------------\n// 6. Completed milestones delivered late\n// --------------------------------------------------\n\nconst completedLateMilestones =\n  completedMilestones.filter(milestone => {\n    const plannedDate =\n      parseDate(milestone['Planned Date']);\n\n    const actualDate =\n      parseDate(milestone['Actual Date']);\n\n    if (!plannedDate || !actualDate) {\n      return false;\n    }\n\n    return actualDate > plannedDate;\n  });\n\n// --------------------------------------------------\n// 7. Percentages\n// --------------------------------------------------\n\nconst overduePercentage =\n  openMilestones.length > 0\n    ? (\n        overdueMilestones.length /\n        openMilestones.length\n      ) * 100\n    : 0;\n\n// --------------------------------------------------\n// 8. Overdue milestone penalty\n// --------------------------------------------------\n\nlet overduePenalty = 0;\n\nif (overduePercentage > 50) {\n  overduePenalty = 40;\n} else if (overduePercentage > 30) {\n  overduePenalty = 30;\n} else if (overduePercentage > 10) {\n  overduePenalty = 20;\n} else if (overduePercentage > 0) {\n  overduePenalty = 10;\n}\n\n// --------------------------------------------------\n// 9. Critical path penalty\n// --------------------------------------------------\n\nconst criticalOverduePenalty = Math.min(\n  criticalOverdueMilestones.length * 10,\n  30\n);\n\n// --------------------------------------------------\n// 10. Forecast delay penalty\n// --------------------------------------------------\n\nlet forecastDelayPenalty = 0;\n\nif (averageForecastDelayDays > 14) {\n  forecastDelayPenalty = 20;\n} else if (averageForecastDelayDays > 7) {\n  forecastDelayPenalty = 15;\n} else if (averageForecastDelayDays > 0) {\n  forecastDelayPenalty = 10;\n}\n\n// --------------------------------------------------\n// 11. Completed late penalty\n// --------------------------------------------------\n\nconst completedLatePenalty = Math.min(\n  completedLateMilestones.length * 10,\n  20\n);\n\n// --------------------------------------------------\n// 12. Final Schedule Health Score\n// --------------------------------------------------\n\nconst scheduleScore = Math.max(\n  0,\n  100 -\n    overduePenalty -\n    criticalOverduePenalty -\n    forecastDelayPenalty -\n    completedLatePenalty\n);\n\nlet scheduleStatus;\n\nif (scheduleScore >= 80) {\n  scheduleStatus = 'Green';\n} else if (scheduleScore >= 60) {\n  scheduleStatus = 'Amber';\n} else {\n  scheduleStatus = 'Red';\n}\n\n// --------------------------------------------------\n// 13. Output\n// --------------------------------------------------\n\nreturn [\n  {\n    json: {\n      assessment_date: assessmentDate,\n\n      source_milestone_rows: rows.length,\n      unique_milestones: milestones.length,\n      duplicate_milestones_removed:\n        duplicatesRemoved,\n\n      completed_milestones:\n        completedMilestones.length,\n\n      open_milestones:\n        openMilestones.length,\n\n      overdue_milestones:\n        overdueMilestones.length,\n\n      overdue_percentage:\n        Number(overduePercentage.toFixed(2)),\n\n      critical_path_milestones:\n        criticalMilestones.length,\n\n      critical_overdue_milestones:\n        criticalOverdueMilestones.length,\n\n      forecast_delayed_milestones:\n        forecastDelayedMilestones.length,\n\n      average_forecast_delay_days:\n        Number(\n          averageForecastDelayDays.toFixed(2)\n        ),\n\n      maximum_forecast_delay_days:\n        maximumForecastDelayDays,\n\n      completed_late_milestones:\n        completedLateMilestones.length,\n\n      overdue_penalty:\n        overduePenalty,\n\n      critical_overdue_penalty:\n        criticalOverduePenalty,\n\n      forecast_delay_penalty:\n        forecastDelayPenalty,\n\n      completed_late_penalty:\n        completedLatePenalty,\n\n      schedule_score:\n        scheduleScore,\n\n      schedule_status:\n        scheduleStatus\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2848,
+        208
+      ],
+      "id": "a53d8ac8-72f0-4afc-8a82-9dcc52b7659c",
+      "name": "14 - Calculate Schedule Health"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8",
+          "mode": "list",
+          "cachedResultName": "AI PMO RAID Register",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 939905841,
+          "mode": "list",
+          "cachedResultName": "Financial",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit#gid=939905841"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3072,
+        112
+      ],
+      "id": "49783f0f-aa5e-4df5-8fe1-ffb509ee07f8",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "hVzXgoE0MmMMCbo6",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(item => item.json);\n\nconst now = new Date();\n\nconst assessmentDate = new Intl.DateTimeFormat('en-CA', {\n  timeZone: 'Asia/Dubai',\n  year: 'numeric',\n  month: '2-digit',\n  day: '2-digit'\n}).format(now);\n\nconst toNumber = value => {\n  const number = Number(value);\n  return Number.isFinite(number) ? number : null;\n};\n\n// For Project 03 v1 we expect one financial record per project.\nconst financial = rows[0] ?? {};\n\nconst approvedBudget =\n  toNumber(financial['Approved Budget']);\n\nconst actualCost =\n  toNumber(financial['Actual Cost']);\n\nconst forecastAtCompletion =\n  toNumber(financial['Forecast at Completion']);\n\nconst suppliedVariance =\n  toNumber(financial['Budget Variance %']);\n\n// Calculate variance independently so we don't blindly trust\n// the manually entered percentage.\nlet calculatedVariance = null;\n\nif (\n  approvedBudget !== null &&\n  approvedBudget > 0 &&\n  forecastAtCompletion !== null\n) {\n  calculatedVariance =\n    ((forecastAtCompletion - approvedBudget) /\n      approvedBudget) *\n    100;\n}\n\n// Prefer calculated variance when possible.\nconst budgetVariance =\n  calculatedVariance !== null\n    ? calculatedVariance\n    : suppliedVariance;\n\n// Validate the supplied sheet value against our calculation.\nlet varianceMismatch = false;\n\nif (\n  suppliedVariance !== null &&\n  calculatedVariance !== null\n) {\n  varianceMismatch =\n    Math.abs(\n      suppliedVariance - calculatedVariance\n    ) > 0.1;\n}\n\n// --------------------------------------------------\n// Financial score\n// --------------------------------------------------\n\nlet financialScore = 0;\n\nif (budgetVariance === null) {\n  financialScore = 0;\n} else if (budgetVariance <= 0) {\n  financialScore = 100;\n} else if (budgetVariance <= 5) {\n  financialScore = 80;\n} else if (budgetVariance <= 10) {\n  financialScore = 60;\n} else if (budgetVariance <= 20) {\n  financialScore = 40;\n} else {\n  financialScore = 20;\n}\n\n// --------------------------------------------------\n// RAG\n// --------------------------------------------------\n\nlet financialStatus;\n\nif (financialScore >= 80) {\n  financialStatus = 'Green';\n} else if (financialScore >= 60) {\n  financialStatus = 'Amber';\n} else {\n  financialStatus = 'Red';\n}\n\n// Current spend percentage is useful context,\n// but it does NOT determine the score directly.\nlet budgetConsumedPercentage = null;\n\nif (\n  approvedBudget !== null &&\n  approvedBudget > 0 &&\n  actualCost !== null\n) {\n  budgetConsumedPercentage =\n    (actualCost / approvedBudget) * 100;\n}\n\nreturn [\n  {\n    json: {\n      assessment_date: assessmentDate,\n\n      project_id:\n        financial['Project ID'] ?? '',\n\n      project:\n        financial.Project ?? '',\n\n      approved_budget:\n        approvedBudget,\n\n      actual_cost:\n        actualCost,\n\n      forecast_at_completion:\n        forecastAtCompletion,\n\n      budget_consumed_percentage:\n        budgetConsumedPercentage !== null\n          ? Number(\n              budgetConsumedPercentage.toFixed(2)\n            )\n          : null,\n\n      supplied_budget_variance_percentage:\n        suppliedVariance,\n\n      calculated_budget_variance_percentage:\n        calculatedVariance !== null\n          ? Number(\n              calculatedVariance.toFixed(2)\n            )\n          : null,\n\n      variance_mismatch:\n        varianceMismatch,\n\n      financial_score:\n        financialScore,\n\n      financial_status:\n        financialStatus\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3280,
+        208
+      ],
+      "id": "4d3ab2bb-860e-4c3c-8bb8-81984aeccc37",
+      "name": "16 - Calculate Financial Health"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8",
+          "mode": "list",
+          "cachedResultName": "AI PMO RAID Register",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 66364363,
+          "mode": "list",
+          "cachedResultName": "Governance",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit#gid=66364363"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        3472,
+        96
+      ],
+      "id": "c4674c41-872a-4f31-951d-e6e06643a3be",
+      "name": "17 - Read Governance",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "hVzXgoE0MmMMCbo6",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $input.all().map(item => item.json);\n\nconst now = new Date();\n\nconst assessmentDate = new Intl.DateTimeFormat('en-CA', {\n  timeZone: 'Asia/Dubai',\n  year: 'numeric',\n  month: '2-digit',\n  day: '2-digit'\n}).format(now);\n\nconst normalize = value =>\n  String(value ?? '').trim().toLowerCase();\n\nconst parseDate = value => {\n  if (!value) return null;\n\n  const match = String(value).match(\n    /^(\\d{4})-(\\d{2})-(\\d{2})$/\n  );\n\n  if (match) {\n    return new Date(\n      Number(match[1]),\n      Number(match[2]) - 1,\n      Number(match[3])\n    );\n  }\n\n  const date = new Date(value);\n\n  if (Number.isNaN(date.getTime())) {\n    return null;\n  }\n\n  return date;\n};\n\nconst [year, month, day] =\n  assessmentDate.split('-').map(Number);\n\nconst today = new Date(\n  year,\n  month - 1,\n  day\n);\n\nconst daysBetween = (start, end) => {\n  const msPerDay = 1000 * 60 * 60 * 24;\n\n  return Math.round(\n    (end.getTime() - start.getTime()) /\n    msPerDay\n  );\n};\n\nconst governance = rows[0] ?? {};\n\n// --------------------------------------------------\n// 1. Status report compliance\n// --------------------------------------------------\n\nconst statusReportDue =\n  parseDate(governance['Status Report Due Date']);\n\nconst statusReportSubmitted =\n  parseDate(governance['Status Report Submitted Date']);\n\nlet statusReportLate = false;\nlet statusReportOverdue = false;\nlet statusReportDelayDays = 0;\n\nif (statusReportDue) {\n  if (statusReportSubmitted) {\n    statusReportLate =\n      statusReportSubmitted > statusReportDue;\n\n    if (statusReportLate) {\n      statusReportDelayDays =\n        daysBetween(\n          statusReportDue,\n          statusReportSubmitted\n        );\n    }\n  } else if (statusReportDue < today) {\n    statusReportOverdue = true;\n\n    statusReportDelayDays =\n      daysBetween(\n        statusReportDue,\n        today\n      );\n  }\n}\n\n// --------------------------------------------------\n// 2. RAID review compliance\n// --------------------------------------------------\n\nconst raidReviewDue =\n  parseDate(governance['RAID Review Due Date']);\n\nconst raidReviewCompleted =\n  parseDate(governance['RAID Review Completed Date']);\n\nconst raidReviewOverdue =\n  raidReviewDue &&\n  !raidReviewCompleted &&\n  raidReviewDue < today;\n\n// --------------------------------------------------\n// 3. Steering Committee compliance\n// --------------------------------------------------\n\nconst steercoDue =\n  parseDate(\n    governance['Steering Committee Due Date']\n  );\n\nconst steercoHeld =\n  parseDate(\n    governance['Steering Committee Held Date']\n  );\n\nconst steercoMissed =\n  steercoDue &&\n  !steercoHeld &&\n  steercoDue < today;\n\n// --------------------------------------------------\n// 4. Pending decisions\n// --------------------------------------------------\n\nconst pendingDecisions =\n  Number(governance['Pending Decisions'] ?? 0);\n\n// --------------------------------------------------\n// 5. Mandatory data completeness\n// --------------------------------------------------\n\nconst mandatoryFieldsComplete =\n  normalize(\n    governance['Mandatory Fields Complete']\n  ) === 'yes';\n\n// --------------------------------------------------\n// 6. Penalties\n// --------------------------------------------------\n\nlet statusReportPenalty = 0;\n\nif (statusReportOverdue) {\n  statusReportPenalty = 20;\n} else if (statusReportLate) {\n  statusReportPenalty = 10;\n}\n\nconst raidReviewPenalty =\n  raidReviewOverdue ? 20 : 0;\n\nconst steeringCommitteePenalty =\n  steercoMissed ? 20 : 0;\n\nlet pendingDecisionPenalty = 0;\n\nif (pendingDecisions >= 5) {\n  pendingDecisionPenalty = 20;\n} else if (pendingDecisions >= 3) {\n  pendingDecisionPenalty = 15;\n} else if (pendingDecisions > 0) {\n  pendingDecisionPenalty = 10;\n}\n\nconst mandatoryFieldsPenalty =\n  mandatoryFieldsComplete ? 0 : 15;\n\n// --------------------------------------------------\n// 7. Final Governance Health Score\n// --------------------------------------------------\n\nconst governanceScore = Math.max(\n  0,\n  100 -\n    statusReportPenalty -\n    raidReviewPenalty -\n    steeringCommitteePenalty -\n    pendingDecisionPenalty -\n    mandatoryFieldsPenalty\n);\n\nlet governanceStatus;\n\nif (governanceScore >= 80) {\n  governanceStatus = 'Green';\n} else if (governanceScore >= 60) {\n  governanceStatus = 'Amber';\n} else {\n  governanceStatus = 'Red';\n}\n\n// --------------------------------------------------\n// 8. Output\n// --------------------------------------------------\n\nreturn [\n  {\n    json: {\n      assessment_date: assessmentDate,\n\n      project_id:\n        governance['Project ID'] ?? '',\n\n      project:\n        governance.Project ?? '',\n\n      status_report_late:\n        statusReportLate,\n\n      status_report_overdue:\n        statusReportOverdue,\n\n      status_report_delay_days:\n        statusReportDelayDays,\n\n      raid_review_overdue:\n        Boolean(raidReviewOverdue),\n\n      steering_committee_missed:\n        Boolean(steercoMissed),\n\n      pending_decisions:\n        pendingDecisions,\n\n      mandatory_fields_complete:\n        mandatoryFieldsComplete,\n\n      status_report_penalty:\n        statusReportPenalty,\n\n      raid_review_penalty:\n        raidReviewPenalty,\n\n      steering_committee_penalty:\n        steeringCommitteePenalty,\n\n      pending_decision_penalty:\n        pendingDecisionPenalty,\n\n      mandatory_fields_penalty:\n        mandatoryFieldsPenalty,\n\n      governance_score:\n        governanceScore,\n\n      governance_status:\n        governanceStatus\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3648,
+        208
+      ],
+      "id": "988b1d37-95e6-49c5-9fe6-a86424bb5ae6",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "numberInputs": 5
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        3648,
+        624
+      ],
+      "id": "67ca4071-cd31-42bd-9380-0f78d03c2502",
+      "name": "19 - Merge Project Health Components"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all().map(item => item.json);\n\n// Merge all component outputs into one object\nconst data = Object.assign({}, ...items);\n\nconst scheduleScore =\n  Number(data.schedule_score ?? 0);\n\nconst raidScore =\n  Number(data.raid_score ?? 0);\n\nconst actionScore =\n  Number(data.action_score ?? 0);\n\nconst financialScore =\n  Number(data.financial_score ?? 0);\n\nconst governanceScore =\n  Number(data.governance_score ?? 0);\n\n// --------------------------------------------------\n// 1. Weighted overall score\n// --------------------------------------------------\n\nconst overallScoreRaw =\n  scheduleScore * 0.25 +\n  raidScore * 0.25 +\n  actionScore * 0.20 +\n  financialScore * 0.15 +\n  governanceScore * 0.15;\n\nconst overallScore =\n  Math.round(overallScoreRaw);\n\n// --------------------------------------------------\n// 2. Base RAG status\n// --------------------------------------------------\n\nlet calculatedOverallStatus;\n\nif (overallScore >= 80) {\n  calculatedOverallStatus = 'Green';\n} else if (overallScore >= 60) {\n  calculatedOverallStatus = 'Amber';\n} else {\n  calculatedOverallStatus = 'Red';\n}\n\n// --------------------------------------------------\n// 3. Critical overrides\n// --------------------------------------------------\n\n// Critical issue already identified in RAID logic\nconst criticalIssues =\n  Number(data.critical_issues ?? 0);\n\nconst raidCriticalOverride =\n  data.critical_override === true;\n\n// Severe schedule condition\nconst scheduleCriticalOverride =\n  scheduleScore < 30;\n\n// Severe financial condition\nconst financialCriticalOverride =\n  financialScore < 30;\n\n// Overall override\nconst criticalOverride =\n  raidCriticalOverride ||\n  scheduleCriticalOverride ||\n  financialCriticalOverride;\n\n// Final status\nconst overallStatus =\n  criticalOverride\n    ? 'Red'\n    : calculatedOverallStatus;\n\n// --------------------------------------------------\n// 4. Identify weakest / strongest components\n// --------------------------------------------------\n\nconst components = [\n  {\n    name: 'Schedule',\n    score: scheduleScore\n  },\n  {\n    name: 'RAID',\n    score: raidScore\n  },\n  {\n    name: 'Actions',\n    score: actionScore\n  },\n  {\n    name: 'Financial',\n    score: financialScore\n  },\n  {\n    name: 'Governance',\n    score: governanceScore\n  }\n];\n\ncomponents.sort(\n  (a, b) => a.score - b.score\n);\n\nconst weakestComponent =\n  components[0];\n\nconst secondWeakestComponent =\n  components[1];\n\nconst strongestComponent =\n  components[components.length - 1];\n\n// --------------------------------------------------\n// 5. Output\n// --------------------------------------------------\n\nreturn [\n  {\n    json: {\n      assessment_date:\n        data.assessment_date,\n\n      project_id:\n        data.project_id ||\n        data['Project ID'] ||\n        'PRJ-001',\n\n      project:\n        data.project ||\n        data.Project ||\n        'CRM Implementation',\n\n      schedule_score:\n        scheduleScore,\n\n      raid_score:\n        raidScore,\n\n      action_score:\n        actionScore,\n\n      financial_score:\n        financialScore,\n\n      governance_score:\n        governanceScore,\n\n      schedule_weight: 25,\n      raid_weight: 25,\n      action_weight: 20,\n      financial_weight: 15,\n      governance_weight: 15,\n\n      overall_health_score:\n        overallScore,\n\n      calculated_overall_status:\n        calculatedOverallStatus,\n\n      critical_issues:\n        criticalIssues,\n\n      raid_critical_override:\n        raidCriticalOverride,\n\n      schedule_critical_override:\n        scheduleCriticalOverride,\n\n      financial_critical_override:\n        financialCriticalOverride,\n\n      critical_override:\n        criticalOverride,\n\n      overall_status:\n        overallStatus,\n\n      weakest_component:\n        weakestComponent.name,\n\n      weakest_component_score:\n        weakestComponent.score,\n\n      second_weakest_component:\n        secondWeakestComponent.name,\n\n      second_weakest_component_score:\n        secondWeakestComponent.score,\n\n      strongest_component:\n        strongestComponent.name,\n\n      strongest_component_score:\n        strongestComponent.score\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3840,
+        672
+      ],
+      "id": "65af9fbf-efe8-40ea-a1b2-123c31faf07c",
+      "name": "20 - Calculate Overall Project Health"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyze this deterministic project health assessment:\n\nProject ID:\n{{ $json.project_id }}\n\nProject:\n{{ $json.project }}\n\nAssessment Date:\n{{ $json.assessment_date }}\n\nOverall Health Score:\n{{ $json.overall_health_score }}\n\nOverall Status:\n{{ $json.overall_status }}\n\nSchedule Score:\n{{ $json.schedule_score }}\n\nRAID Score:\n{{ $json.raid_score }}\n\nAction Score:\n{{ $json.action_score }}\n\nFinancial Score:\n{{ $json.financial_score }}\n\nGovernance Score:\n{{ $json.governance_score }}\n\nCritical Issues:\n{{ $json.critical_issues }}\n\nRAID Critical Override:\n{{ $json.raid_critical_override }}\n\nSchedule Critical Override:\n{{ $json.schedule_critical_override }}\n\nFinancial Critical Override:\n{{ $json.financial_critical_override }}\n\nWeakest Component:\n{{ $json.weakest_component }}\n\nWeakest Component Score:\n{{ $json.weakest_component_score }}\n\nSecond Weakest Component:\n{{ $json.second_weakest_component }}\n\nSecond Weakest Component Score:\n{{ $json.second_weakest_component_score }}\n\nStrongest Component:\n{{ $json.strongest_component }}\n\nStrongest Component Score:\n{{ $json.strongest_component_score }}",
+        "options": {
+          "systemMessage": "You are a senior PMO analyst.\n\nYou will receive a deterministic project health assessment produced by business rules.\n\nYou MUST NOT:\n- recalculate any score\n- change any score\n- change any RAG status\n- override the supplied critical flags\n- invent project facts\n- claim predictive certainty\n\nYour task is only to interpret the supplied data for management.\n\nReturn valid JSON only in this structure:\n\n{\n  \"executive_summary\": \"\",\n  \"top_health_drivers\": [\n    \"\",\n    \"\",\n    \"\"\n  ],\n  \"recommended_actions\": [\n    \"\",\n    \"\",\n    \"\"\n  ],\n  \"management_attention\": \"\"\n}\n\nRules:\n- Keep executive_summary to 2-3 sentences.\n- Identify the most material drivers from the supplied scores and flags.\n- Recommended actions must be concrete and operational.\n- Do not invent owners, dates, budget values, risks, issues, or milestones that were not supplied.\n- management_attention must state what requires immediate management attention.\n- No markdown.\n- No text outside the JSON.\nADDITIONAL RULES:\n\n- Recommendations must be directly traceable to the supplied health indicators.\n- Do not prescribe specific ceremonies, meeting frequencies, staffing changes, scope freezes, re-baselining, resource allocation, or approval mechanisms unless those facts or requirements are explicitly supplied.\n- Do not invent remediation methods that cannot be justified from the supplied assessment.\n- Phrase recommendations at the management-control level when detailed root-cause information is unavailable.\n- Every recommended action must correspond to one of the supplied weak components, critical issues, or override conditions.\n- Do not infer root causes beyond the supplied data.\n\nrecommended_actions must contain exactly 3 actions.\nEach action must:\n1. identify the supplied health condition being addressed,\n2. specify the immediate management control required,\n3. avoid inventing implementation details that were not supplied."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        4160,
+        592
+      ],
+      "id": "5da11c4e-490b-4c34-a8e9-5c12a5a1298b",
+      "name": "21 - Generate Executive Health Summary"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        4160,
+        832
+      ],
+      "id": "b5937ff7-7fe5-4bef-9933-f28c189f6357",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "xqs1O62E0wRLzXaP",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.first().json;\n\nlet parsed;\n\ntry {\n  parsed = JSON.parse(item.output);\n} catch (error) {\n  throw new Error(\n    `Failed to parse AI executive health JSON: ${error.message}`\n  );\n}\n\nconst requiredFields = [\n  'executive_summary',\n  'top_health_drivers',\n  'recommended_actions',\n  'management_attention'\n];\n\nfor (const field of requiredFields) {\n  if (!(field in parsed)) {\n    throw new Error(\n      `Missing required AI output field: ${field}`\n    );\n  }\n}\n\nif (!Array.isArray(parsed.top_health_drivers)) {\n  throw new Error(\n    'top_health_drivers must be an array'\n  );\n}\n\nif (!Array.isArray(parsed.recommended_actions)) {\n  throw new Error(\n    'recommended_actions must be an array'\n  );\n}\n\nreturn [\n  {\n    json: {\n      executive_summary:\n        parsed.executive_summary,\n\n      health_driver_1:\n        parsed.top_health_drivers[0] ?? '',\n\n      health_driver_2:\n        parsed.top_health_drivers[1] ?? '',\n\n      health_driver_3:\n        parsed.top_health_drivers[2] ?? '',\n\n      recommended_action_1:\n        parsed.recommended_actions[0] ?? '',\n\n      recommended_action_2:\n        parsed.recommended_actions[1] ?? '',\n\n      recommended_action_3:\n        parsed.recommended_actions[2] ?? '',\n\n      management_attention:\n        parsed.management_attention\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4480,
+        656
+      ],
+      "id": "12f4defb-650e-422c-a18d-6fb4a7d0027b",
+      "name": "22 - Parse Executive Health Summary"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8",
+          "mode": "list",
+          "cachedResultName": "AI PMO RAID Register",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1599724858,
+          "mode": "list",
+          "cachedResultName": "Project Health",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit#gid=1599724858"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Assessment ID": "={{ 'PHA-' + $json.project_id + '-' + $now.setZone('Asia/Dubai').toFormat('yyyyLLddHHmmss') }}",
+            "Assessment Date": "={{ $json.assessment_date }}",
+            "Project ID": "={{ $json.project_id }}",
+            "Project": "={{ $json.project }}",
+            "Schedule Score": "={{ $json.schedule_score }}",
+            "RAID Score": "={{ $json.raid_score }}",
+            "Action Score": "={{ $json.action_score }}",
+            "Financial Score": "={{ $json.financial_score }}",
+            "Governance Score": "={{ $json.governance_score }}",
+            "Overall Health Score": "={{ $json.overall_health_score }}",
+            "RAG Status": "={{ $json.overall_status }}",
+            "Critical Override": "={{ $json.critical_override }}",
+            "Top Health Driver 1": "={{ $json.health_driver_1 }}",
+            "Top Health Driver 2": "={{ $json.health_driver_2 }}",
+            "Top Health Driver 3": "={{ $json.health_driver_3 }}",
+            "AI Executive Summary": "={{ $json.executive_summary }}",
+            "Recommended Action 1": "={{ $json.recommended_action_1 }}",
+            "Recommended Action 2": "={{ $json.recommended_action_2 }}",
+            "Recommended Action 3": "={{ $json.recommended_action_3 }}",
+            "Management Attention": "={{ $json.management_attention }}",
+            "Previous Score": "={{ $json.previous_score }}",
+            "Score Change": "={{ $json.score_change }}",
+            "Trend": "={{ $json.trend }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Assessment ID",
+              "displayName": "Assessment ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Assessment Date",
+              "displayName": "Assessment Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Project ID",
+              "displayName": "Project ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Project",
+              "displayName": "Project",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Schedule Score",
+              "displayName": "Schedule Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "RAID Score",
+              "displayName": "RAID Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Action Score",
+              "displayName": "Action Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Financial Score",
+              "displayName": "Financial Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Governance Score",
+              "displayName": "Governance Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Overall Health Score",
+              "displayName": "Overall Health Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "RAG Status",
+              "displayName": "RAG Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Previous Score",
+              "displayName": "Previous Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Score Change",
+              "displayName": "Score Change",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Trend",
+              "displayName": "Trend",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Critical Override",
+              "displayName": "Critical Override",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Top Health Driver 1",
+              "displayName": "Top Health Driver 1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Top Health Driver 2",
+              "displayName": "Top Health Driver 2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Top Health Driver 3",
+              "displayName": "Top Health Driver 3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "AI Executive Summary",
+              "displayName": "AI Executive Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Recommended Action 1",
+              "displayName": "Recommended Action 1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Recommended Action 2",
+              "displayName": "Recommended Action 2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Recommended Action 3",
+              "displayName": "Recommended Action 3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Management Attention",
+              "displayName": "Management Attention",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        4800,
+        976
+      ],
+      "id": "e7f3e73c-0ac7-4bb8-8aac-de5f14bab538",
+      "name": "24 - Write Project Health",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "hVzXgoE0MmMMCbo6",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const history = $input.all().map(item => item.json);\n\n// Current assessment comes from the deterministic scoring node\nconst current =\n  $('20 - Calculate Overall Project Health')\n    .first()\n    .json;\n\nconst currentScore =\n  Number(current.overall_health_score ?? 0);\n\n// Sort historical assessments newest first\nhistory.sort((a, b) => {\n  const idA = String(a['Assessment ID'] ?? '');\n  const idB = String(b['Assessment ID'] ?? '');\n\n  return idB.localeCompare(idA);\n});\n\n// Most recent existing assessment\nconst previous = history[0] ?? null;\n\nlet previousScore = null;\nlet scoreChange = null;\nlet trend = 'First Assessment';\n\nif (previous) {\n  previousScore =\n    Number(previous['Overall Health Score']);\n\n  scoreChange =\n    currentScore - previousScore;\n\n  if (scoreChange > 0) {\n    trend = 'Improving';\n  } else if (scoreChange < 0) {\n    trend = 'Deteriorating';\n  } else {\n    trend = 'Stable';\n  }\n}\n\nreturn [\n  {\n    json: {\n      previous_score: previousScore,\n      score_change: scoreChange,\n      trend: trend\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4480,
+        1040
+      ],
+      "id": "7ee9b197-bd7c-477b-b3df-e2b1c8403839",
+      "name": "26 - Calculate Health Trend"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8",
+          "mode": "list",
+          "cachedResultName": "AI PMO RAID Register",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1599724858,
+          "mode": "list",
+          "cachedResultName": "Project Health",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit#gid=1599724858"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "Project ID",
+              "lookupValue": "PRJ-001"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        4256,
+        960
+      ],
+      "id": "2d222ed3-c15a-469e-86d4-4b81a59cdd57",
+      "name": "25 - Read Previous Project Health",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "hVzXgoE0MmMMCbo6",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "numberInputs": 3,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        4624,
+        848
+      ],
+      "id": "e61c8688-5610-4b03-aa49-007e07aceb4b",
+      "name": "27 - Merge Complete Health Record"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "cdda132d-78ba-48dd-b0d2-8203c7d7fb99",
+              "leftValue": "={{ $json.overall_status }}",
+              "rightValue": "Red",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "1981897d-7d1a-4535-8cfa-b502535e127e",
+              "leftValue": "={{ $json.critical_override }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "7c144a34-7c36-4746-8e6c-c0396d2e610e",
+              "leftValue": "={{ $json.score_change }}",
+              "rightValue": -10,
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        4768,
+        736
+      ],
+      "id": "28b4b11f-4c5f-42a0-ae0e-dfd0004ab32f",
+      "name": "28 - Check Alert Condition"
+    },
+    {
+      "parameters": {
+        "jsCode": "const historyRows = $input.all().map(item => item.json);\n\n// Current project-health object comes from node 27\nconst current =\n  $('27 - Merge Complete Health Record')\n    .first()\n    .json;\n\nconst assessmentDate =\n  current.assessment_date ?? '';\n\nconst projectId =\n  current.project_id ?? '';\n\nconst project =\n  current.project ?? '';\n\nconst overallScore =\n  Number(current.overall_health_score ?? 0);\n\nconst previousScore =\n  current.previous_score !== null &&\n  current.previous_score !== undefined\n    ? Number(current.previous_score)\n    : null;\n\nconst scoreChange =\n  current.score_change !== null &&\n  current.score_change !== undefined\n    ? Number(current.score_change)\n    : null;\n\nconst overallStatus =\n  String(current.overall_status ?? '');\n\nconst criticalOverride =\n  current.critical_override === true;\n\n// --------------------------------------------------\n// 1. Determine current alert type\n// --------------------------------------------------\n\nlet alertType = '';\nlet alertReason = '';\n\nif (\n  scoreChange !== null &&\n  scoreChange <= -10\n) {\n  alertType = 'SCORE_DROP';\n  alertReason =\n    `Project health score deteriorated by ${Math.abs(scoreChange)} points.`;\n} else if (criticalOverride) {\n  alertType = 'CRITICAL_OVERRIDE';\n  alertReason =\n    'Project health has an active critical override.';\n} else if (overallStatus === 'Red') {\n  alertType = 'RED_STATUS';\n  alertReason =\n    'Project health status is Red.';\n}\n\n// --------------------------------------------------\n// 2. Build stable alert key\n// --------------------------------------------------\n\nconst alertKey =\n  `${projectId}|${alertType}`;\n\n// --------------------------------------------------\n// 3. Remove empty placeholder items\n// --------------------------------------------------\n\nconst validHistoryRows =\n  historyRows.filter(row => {\n    return Object.keys(row).length > 0;\n  });\n\n// --------------------------------------------------\n// 4. Check whether same alert was already sent\n// --------------------------------------------------\n\nconst matchingAlert =\n  validHistoryRows.find(row => {\n    const existingKey =\n      String(row['Alert Key'] ?? '').trim();\n\n    const existingStatus =\n      String(row['Alert Status'] ?? '')\n        .trim()\n        .toUpperCase();\n\n    return (\n      existingKey === alertKey &&\n      existingStatus === 'SENT'\n    );\n  });\n\n// --------------------------------------------------\n// 5. Decide whether to send\n// --------------------------------------------------\n\nconst sendAlert =\n  Boolean(alertType) &&\n  !matchingAlert;\n\n// --------------------------------------------------\n// 6. Generate alert ID\n// --------------------------------------------------\n\nconst now = new Date();\n\nconst timestamp =\n  new Intl.DateTimeFormat('en-CA', {\n    timeZone: 'Asia/Dubai',\n    year: 'numeric',\n    month: '2-digit',\n    day: '2-digit',\n    hour: '2-digit',\n    minute: '2-digit',\n    second: '2-digit',\n    hour12: false\n  })\n    .format(now)\n    .replace(/[^\\d]/g, '');\n\nconst alertId =\n  `ALT-${projectId}-${timestamp}`;\n\n// --------------------------------------------------\n// 7. Output\n// --------------------------------------------------\n\nreturn [\n  {\n    json: {\n      alert_id: alertId,\n      assessment_id: '',\n      assessment_date: assessmentDate,\n\n      project_id: projectId,\n      project: project,\n\n      alert_type: alertType,\n      alert_key: alertKey,\n      alert_reason: alertReason,\n\n      overall_health_score:\n        overallScore,\n\n      previous_score:\n        previousScore,\n\n      score_change:\n        scoreChange,\n\n      rag_status:\n        overallStatus,\n\n      critical_override:\n        criticalOverride,\n\n      duplicate_alert_found:\n        Boolean(matchingAlert),\n\n      send_alert:\n        sendAlert,\n\n      alert_status:\n        sendAlert\n          ? 'READY_TO_SEND'\n          : 'SUPPRESSED'\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        5216,
+        640
+      ],
+      "id": "76bc951a-e3db-487c-9264-900bc3bd6471",
+      "name": "30 - Build Alert Decision"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "e91e0262-1f62-4713-98a9-0343dfd04e46",
+              "leftValue": "={{ $json.send_alert }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        5440,
+        640
+      ],
+      "id": "2b83c9e7-f872-4653-af70-91cdcfaffdec",
+      "name": "31 - Check Send Alert"
+    },
+    {
+      "parameters": {
+        "sendTo": "aziz.syed666@gmail.com",
+        "subject": "=Subject: Project Health Alert - {{ $json.project }} - {{ $json.rag_status }}",
+        "message": "=Project: {{ $json.project }} Project ID: {{ $json.project_id }}  Overall Health Score: {{ $json.overall_health_score }} RAG Status: {{ $json.rag_status }} Critical Override: {{ $json.critical_override }}  Alert Type: {{ $json.alert_type }} Alert Reason: {{ $json.alert_reason }}  Previous Score: {{ $json.previous_score }} Score Change: {{ $json.score_change }}  Immediate management review is required.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        5648,
+        512
+      ],
+      "id": "73144dec-42e7-4f6f-9b0c-99932f79a29f",
+      "name": "32 - Send Management Alert",
+      "webhookId": "053eeffa-fcd0-4d25-aff8-dbefcb15acaf",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "1B4OTuHX3KHjQQ5m",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8",
+          "mode": "list",
+          "cachedResultName": "AI PMO RAID Register",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1156989886,
+          "mode": "list",
+          "cachedResultName": "Project Alerts",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit#gid=1156989886"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Alert ID": "={{ $('30 - Build Alert Decision').first().json.alert_id }}",
+            "Project ID": "={{ $('30 - Build Alert Decision').first().json.project_id }}",
+            "Project": "={{ $('30 - Build Alert Decision').first().json.project }}",
+            "Alert Type": "={{ $('30 - Build Alert Decision').first().json.alert_type }}",
+            "Alert Key": "={{ $('30 - Build Alert Decision').first().json.alert_key }}",
+            "Alert Status": "SENT",
+            "Overall Health Score": "={{ $('30 - Build Alert Decision').first().json.overall_health_score }}",
+            "Previous Score": "={{ $('30 - Build Alert Decision').first().json.previous_score }}",
+            "Score Change": "={{ $('30 - Build Alert Decision').first().json.score_change }}",
+            "RAG Status": "={{ $('30 - Build Alert Decision').first().json.rag_status }}",
+            "Critical Override": "={{ $('30 - Build Alert Decision').first().json.critical_override }}",
+            "Sent Date": "={{ $now.setZone('Asia/Dubai').toFormat('yyyy-LL-dd HH:mm:ss') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Alert ID",
+              "displayName": "Alert ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Assessment ID",
+              "displayName": "Assessment ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Project ID",
+              "displayName": "Project ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Project",
+              "displayName": "Project",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Alert Type",
+              "displayName": "Alert Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Alert Key",
+              "displayName": "Alert Key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Alert Status",
+              "displayName": "Alert Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Overall Health Score",
+              "displayName": "Overall Health Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Previous Score",
+              "displayName": "Previous Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Score Change",
+              "displayName": "Score Change",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "RAG Status",
+              "displayName": "RAG Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Critical Override",
+              "displayName": "Critical Override",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Sent Date",
+              "displayName": "Sent Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        5856,
+        512
+      ],
+      "id": "daf952f7-479c-414a-a88f-635cab0a9e68",
+      "name": "33 - Write Alert History",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "hVzXgoE0MmMMCbo6",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8",
+          "mode": "list",
+          "cachedResultName": "AI PMO RAID Register",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1156989886,
+          "mode": "list",
+          "cachedResultName": "Project Alerts",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/14YsmWlL8M2nn_SAJI_DSpm8nAacWFwUEJk-5UFz_5k8/edit#gid=1156989886"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        4992,
+        640
+      ],
+      "id": "bbf55c3c-9661-4b63-ae9b-f3835b210756",
+      "name": "Overall Project Health",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "hVzXgoE0MmMMCbo6",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "01 - Read Actions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "01 - Read Actions": {
+      "main": [
+        [
+          {
+            "node": "02 - Calculate Action Health",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "02 - Calculate Action Health": {
+      "main": [
+        [
+          {
+            "node": "03 - Read Risk",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "19 - Merge Project Health Components",
+            "type": "main",
+            "index": 4
+          }
+        ]
+      ]
+    },
+    "03 - Read Risk": {
+      "main": [
+        [
+          {
+            "node": "04 - Calculate Risk Health",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "04 - Calculate Risk Health": {
+      "main": [
+        [
+          {
+            "node": "05 - Read Issues",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "11 - Merge RAID Components",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "05 - Read Issues": {
+      "main": [
+        [
+          {
+            "node": "06 - Calculate Issue Health",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "06 - Calculate Issue Health": {
+      "main": [
+        [
+          {
+            "node": "07 - Read Dependencies",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "11 - Merge RAID Components",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "07 - Read Dependencies": {
+      "main": [
+        [
+          {
+            "node": "08 - Calculate Dependency Health",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "08 - Calculate Dependency Health": {
+      "main": [
+        [
+          {
+            "node": "09 - Read Assumptions",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "11 - Merge RAID Components",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "09 - Read Assumptions": {
+      "main": [
+        [
+          {
+            "node": "10 - Calculate Assumption Health",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "10 - Calculate Assumption Health": {
+      "main": [
+        [
+          {
+            "node": "11 - Merge RAID Components",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "11 - Merge RAID Components": {
+      "main": [
+        [
+          {
+            "node": "12 - Calculate RAID Health",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "12 - Calculate RAID Health": {
+      "main": [
+        [
+          {
+            "node": "13 - Read Schedule",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "19 - Merge Project Health Components",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "13 - Read Schedule": {
+      "main": [
+        [
+          {
+            "node": "14 - Calculate Schedule Health",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "14 - Calculate Schedule Health": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "19 - Merge Project Health Components",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "16 - Calculate Financial Health",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "16 - Calculate Financial Health": {
+      "main": [
+        [
+          {
+            "node": "17 - Read Governance",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "19 - Merge Project Health Components",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "17 - Read Governance": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "19 - Merge Project Health Components",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "19 - Merge Project Health Components": {
+      "main": [
+        [
+          {
+            "node": "20 - Calculate Overall Project Health",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "20 - Calculate Overall Project Health": {
+      "main": [
+        [
+          {
+            "node": "21 - Generate Executive Health Summary",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "27 - Merge Complete Health Record",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "25 - Read Previous Project Health",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "21 - Generate Executive Health Summary",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "21 - Generate Executive Health Summary": {
+      "main": [
+        [
+          {
+            "node": "22 - Parse Executive Health Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "22 - Parse Executive Health Summary": {
+      "main": [
+        [
+          {
+            "node": "27 - Merge Complete Health Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "24 - Write Project Health": {
+      "main": [
+        []
+      ]
+    },
+    "26 - Calculate Health Trend": {
+      "main": [
+        [
+          {
+            "node": "27 - Merge Complete Health Record",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "25 - Read Previous Project Health": {
+      "main": [
+        [
+          {
+            "node": "26 - Calculate Health Trend",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "27 - Merge Complete Health Record": {
+      "main": [
+        [
+          {
+            "node": "24 - Write Project Health",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "28 - Check Alert Condition",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "28 - Check Alert Condition": {
+      "main": [
+        [
+          {
+            "node": "Overall Project Health",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "30 - Build Alert Decision": {
+      "main": [
+        [
+          {
+            "node": "31 - Check Send Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "31 - Check Send Alert": {
+      "main": [
+        [
+          {
+            "node": "32 - Send Management Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "32 - Send Management Alert": {
+      "main": [
+        [
+          {
+            "node": "33 - Write Alert History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Overall Project Health": {
+      "main": [
+        [
+          {
+            "node": "30 - Build Alert Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "5a0e5642-dd68-4393-bb35-0512fd5616e5",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ca19ab3d3cdf09f7e55378e9791459a0df6a3c73f10d678dcea7dbd2b88e0b7a"
+  },
+  "nodeGroups": [],
+  "id": "IHjpWxv2XYzMDUGj",
+  "tags": []
+}
