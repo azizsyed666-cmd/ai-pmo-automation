@@ -1,0 +1,661 @@
+{
+  "name": "Project 04-AI PMO Intelligence Assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1ULZhj-eOOpsoHZAL_-Avo9r8t7cQN64YTOYxBneWoaE",
+          "mode": "list",
+          "cachedResultName": "AI PMO Intelligence Assistant - Portfolio Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ULZhj-eOOpsoHZAL_-Avo9r8t7cQN64YTOYxBneWoaE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Projects",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ULZhj-eOOpsoHZAL_-Avo9r8t7cQN64YTOYxBneWoaE/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        224,
+        -96
+      ],
+      "id": "eec764e1-d1a4-4a9c-ba91-011c9a4bd91e",
+      "name": "Get Projects",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "hVzXgoE0MmMMCbo6",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1ULZhj-eOOpsoHZAL_-Avo9r8t7cQN64YTOYxBneWoaE",
+          "mode": "list",
+          "cachedResultName": "AI PMO Intelligence Assistant - Portfolio Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ULZhj-eOOpsoHZAL_-Avo9r8t7cQN64YTOYxBneWoaE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 154515332,
+          "mode": "list",
+          "cachedResultName": "Actions",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ULZhj-eOOpsoHZAL_-Avo9r8t7cQN64YTOYxBneWoaE/edit#gid=154515332"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        224,
+        -256
+      ],
+      "id": "f184fde3-e4c1-42c4-b784-19e097e2fa71",
+      "name": "Get Actions",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "hVzXgoE0MmMMCbo6",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1ULZhj-eOOpsoHZAL_-Avo9r8t7cQN64YTOYxBneWoaE",
+          "mode": "list",
+          "cachedResultName": "AI PMO Intelligence Assistant - Portfolio Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ULZhj-eOOpsoHZAL_-Avo9r8t7cQN64YTOYxBneWoaE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 806441105,
+          "mode": "list",
+          "cachedResultName": "Risks",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ULZhj-eOOpsoHZAL_-Avo9r8t7cQN64YTOYxBneWoaE/edit#gid=806441105"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        224,
+        80
+      ],
+      "id": "e94af5f9-926f-469a-9ed8-d4aaa024e6a0",
+      "name": "Get Risks",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "hVzXgoE0MmMMCbo6",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1ULZhj-eOOpsoHZAL_-Avo9r8t7cQN64YTOYxBneWoaE",
+          "mode": "list",
+          "cachedResultName": "AI PMO Intelligence Assistant - Portfolio Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ULZhj-eOOpsoHZAL_-Avo9r8t7cQN64YTOYxBneWoaE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1281719987,
+          "mode": "list",
+          "cachedResultName": "Issues",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ULZhj-eOOpsoHZAL_-Avo9r8t7cQN64YTOYxBneWoaE/edit#gid=1281719987"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        224,
+        272
+      ],
+      "id": "7847709f-896d-461f-bf3c-ad62c374b907",
+      "name": "Get Issues",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "hVzXgoE0MmMMCbo6",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1ULZhj-eOOpsoHZAL_-Avo9r8t7cQN64YTOYxBneWoaE",
+          "mode": "list",
+          "cachedResultName": "AI PMO Intelligence Assistant - Portfolio Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ULZhj-eOOpsoHZAL_-Avo9r8t7cQN64YTOYxBneWoaE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 295223697,
+          "mode": "list",
+          "cachedResultName": "Milestones",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ULZhj-eOOpsoHZAL_-Avo9r8t7cQN64YTOYxBneWoaE/edit#gid=295223697"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        224,
+        -432
+      ],
+      "id": "2b457ce5-84c1-4d23-b8fe-0446847e0a31",
+      "name": "Get Milestones",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "hVzXgoE0MmMMCbo6",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1ULZhj-eOOpsoHZAL_-Avo9r8t7cQN64YTOYxBneWoaE",
+          "mode": "list",
+          "cachedResultName": "AI PMO Intelligence Assistant - Portfolio Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ULZhj-eOOpsoHZAL_-Avo9r8t7cQN64YTOYxBneWoaE/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 250593376,
+          "mode": "list",
+          "cachedResultName": "Dependencies",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1ULZhj-eOOpsoHZAL_-Avo9r8t7cQN64YTOYxBneWoaE/edit#gid=250593376"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        224,
+        464
+      ],
+      "id": "9dc40223-11d4-47a5-8e80-104c76bd8a1d",
+      "name": "Get Dependencies",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "hVzXgoE0MmMMCbo6",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "numberInputs": 6
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        672,
+        -64
+      ],
+      "id": "a01a757e-549a-45c1-9a3d-d0d35e1c31e4",
+      "name": "Merge Portfolio Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nconst portfolio = {\n  projects: [],\n  actions: [],\n  risks: [],\n  issues: [],\n  milestones: [],\n  dependencies: []\n};\n\n// Original chat question\nconst userQuestion =\n  $('User Question').first().json.question || \"\";\n\n// Intent already classified before the Google Sheets branch\nconst queryContext =\n  $('Classify User Intent').first().json.query_context || {\n    original_question: userQuestion,\n    intent: \"GENERAL_PMO_QUERY\",\n    project_id: null\n  };\n\nfor (const item of items) {\n  const data = item.json;\n\n  if (\n    data[\"Project Name\"] &&\n    data[\"Health Score\"] !== undefined\n  ) {\n    portfolio.projects.push(data);\n    continue;\n  }\n\n  if (data[\"Action ID\"]) {\n    portfolio.actions.push(data);\n    continue;\n  }\n\n  if (data[\"Risk ID\"]) {\n    portfolio.risks.push(data);\n    continue;\n  }\n\n  if (data[\"Issue ID\"]) {\n    portfolio.issues.push(data);\n    continue;\n  }\n\n  if (data[\"Milestone ID\"]) {\n    portfolio.milestones.push(data);\n    continue;\n  }\n\n  if (data[\"Dependency ID\"]) {\n    portfolio.dependencies.push(data);\n    continue;\n  }\n}\n\nreturn [\n  {\n    json: {\n      user_question: userQuestion,\n\n      query_context: queryContext,\n\n      portfolio,\n\n      record_counts: {\n        projects: portfolio.projects.length,\n        actions: portfolio.actions.length,\n        risks: portfolio.risks.length,\n        issues: portfolio.issues.length,\n        milestones: portfolio.milestones.length,\n        dependencies: portfolio.dependencies.length\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        912,
+        0
+      ],
+      "id": "3e89dfbb-69ec-49d9-a86e-304c8f676a8d",
+      "name": "Build Portfolio Context"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\nconst portfolio = input.portfolio;\nconst exceptions = [];\n\nconst isBlank = (value) =>\n  value === undefined ||\n  value === null ||\n  String(value).trim() === \"\";\n\nconst isYes = (value) =>\n  String(value || \"\").trim().toLowerCase() === \"yes\";\n\nconst isOpen = (value) =>\n  String(value || \"\").trim().toLowerCase() === \"open\";\n\nconst today = new Date(\"2026-08-12T00:00:00\");\n\nconst projectMap = Object.fromEntries(\n  portfolio.projects.map(project => [\n    project[\"Project ID\"],\n    project\n  ])\n);\n\n// 1. High Probability / High Impact or Risk Score 9 risks\n// without required governance controls\nfor (const risk of portfolio.risks) {\n  const highSeverity =\n    Number(risk[\"Risk Score\"]) >= 9 ||\n    (\n      String(risk[\"Probability\"]).toLowerCase() === \"high\" &&\n      String(risk[\"Impact\"]).toLowerCase() === \"high\"\n    );\n\n  if (highSeverity && isOpen(risk[\"Status\"])) {\n\n    if (isBlank(risk[\"Owner\"])) {\n      exceptions.push({\n        exception_type: \"RISK_NO_OWNER\",\n        severity: \"Critical\",\n        project_id: risk[\"Project ID\"],\n        record_id: risk[\"Risk ID\"],\n        description:\n          \"Open High Probability / High Impact risk with Risk Score 9 has no assigned owner.\"\n      });\n    }\n\n    if (isBlank(risk[\"Mitigation\"])) {\n      exceptions.push({\n        exception_type: \"RISK_NO_MITIGATION\",\n        severity: \"Critical\",\n        project_id: risk[\"Project ID\"],\n        record_id: risk[\"Risk ID\"],\n        description:\n          \"Open High Probability / High Impact risk with Risk Score 9 has no mitigation plan.\"\n      });\n    }\n\n    if (!isYes(risk[\"Escalation Required\"])) {\n      exceptions.push({\n        exception_type: \"RISK_NOT_ESCALATED\",\n        severity: \"High\",\n        project_id: risk[\"Project ID\"],\n        record_id: risk[\"Risk ID\"],\n        description:\n          \"Open High Probability / High Impact risk with Risk Score 9 is not marked for escalation.\"\n      });\n    }\n  }\n}\n\n// 2. Critical issues without owner / escalation / overdue\nfor (const issue of portfolio.issues) {\n  const critical =\n    String(issue[\"Severity\"]).toLowerCase() === \"critical\";\n\n  if (critical && isOpen(issue[\"Status\"])) {\n\n    if (isBlank(issue[\"Owner\"])) {\n      exceptions.push({\n        exception_type: \"CRITICAL_ISSUE_NO_OWNER\",\n        severity: \"Critical\",\n        project_id: issue[\"Project ID\"],\n        record_id: issue[\"Issue ID\"],\n        description:\n          \"Critical open issue has no assigned owner.\"\n      });\n    }\n\n    if (!isYes(issue[\"Escalation Required\"])) {\n      exceptions.push({\n        exception_type: \"CRITICAL_ISSUE_NOT_ESCALATED\",\n        severity: \"Critical\",\n        project_id: issue[\"Project ID\"],\n        record_id: issue[\"Issue ID\"],\n        description:\n          \"Critical open issue is not marked for escalation.\"\n      });\n    }\n\n    const targetDateRaw = issue[\"Target Resolution Date\"];\n\n    if (targetDateRaw) {\n      const targetDate =\n        new Date(`${targetDateRaw}T00:00:00`);\n\n      if (targetDate < today) {\n        exceptions.push({\n          exception_type: \"CRITICAL_ISSUE_OVERDUE\",\n          severity: \"Critical\",\n          project_id: issue[\"Project ID\"],\n          record_id: issue[\"Issue ID\"],\n          description:\n            \"Critical open issue is past its target resolution date.\"\n        });\n      }\n    }\n  }\n}\n\n// 3. Green project with Critical open issue\nfor (const project of portfolio.projects) {\n  const projectId = project[\"Project ID\"];\n\n  const criticalOpenIssue =\n    portfolio.issues.some(issue =>\n      issue[\"Project ID\"] === projectId &&\n      String(issue[\"Severity\"]).toLowerCase() === \"critical\" &&\n      isOpen(issue[\"Status\"])\n    );\n\n  if (\n    String(project[\"Overall Status\"]).toLowerCase() === \"green\" &&\n    criticalOpenIssue\n  ) {\n    exceptions.push({\n      exception_type: \"GREEN_STATUS_CONTRADICTION\",\n      severity: \"Critical\",\n      project_id: projectId,\n      record_id: projectId,\n      description:\n        \"Project is reported Green despite having a Critical open issue.\"\n    });\n  }\n}\n\n// 4. Critical milestones that are delayed or at risk\nfor (const milestone of portfolio.milestones) {\n  const critical =\n    String(\n      milestone[\"Critical Milestone\"]\n    ).toLowerCase() === \"yes\";\n\n  const status =\n    String(milestone[\"Status\"]).toLowerCase();\n\n  if (\n    critical &&\n    (\n      status === \"delayed\" ||\n      status === \"at risk\"\n    )\n  ) {\n    exceptions.push({\n      exception_type: \"CRITICAL_MILESTONE_AT_RISK\",\n      severity:\n        status === \"delayed\"\n          ? \"High\"\n          : \"Medium\",\n      project_id: milestone[\"Project ID\"],\n      record_id: milestone[\"Milestone ID\"],\n      description:\n        `Critical milestone is ${milestone[\"Status\"]}.`\n    });\n  }\n}\n\n// Add project name\nfor (const exception of exceptions) {\n  exception.project_name =\n    projectMap[\n      exception.project_id\n    ]?.[\"Project Name\"] || \"\";\n}\n\nreturn [\n  {\n    json: {\n      user_question: input.user_question,\n      query_context: input.query_context,\n\n      portfolio,\n\n      record_counts: input.record_counts,\n\n      governance_exceptions: exceptions,\n\n      governance_summary: {\n        total_exceptions: exceptions.length,\n\n        critical:\n          exceptions.filter(\n            x => x.severity === \"Critical\"\n          ).length,\n\n        high:\n          exceptions.filter(\n            x => x.severity === \"High\"\n          ).length,\n\n        medium:\n          exceptions.filter(\n            x => x.severity === \"Medium\"\n          ).length\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1152,
+        0
+      ],
+      "id": "5a0b4fd2-cd95-41a2-b849-059bc8d141b0",
+      "name": "Detect Governance Exceptions"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\nfunction extractText(payload) {\n  if (Array.isArray(payload.output)) {\n    for (const message of payload.output) {\n      if (!Array.isArray(message.content)) continue;\n\n      for (const part of message.content) {\n        if (\n          part.type === \"output_text\" &&\n          typeof part.text === \"string\"\n        ) {\n          return part.text;\n        }\n      }\n    }\n  }\n\n  if (typeof payload.text === \"string\") {\n    return payload.text;\n  }\n\n  if (typeof payload.response === \"string\") {\n    return payload.response;\n  }\n\n  if (typeof payload.content === \"string\") {\n    return payload.content;\n  }\n\n  throw new Error(\"AI response text could not be found.\");\n}\n\nconst rawText = extractText(input).trim();\n\nlet parsed;\n\ntry {\n  parsed = JSON.parse(rawText);\n} catch (error) {\n  throw new Error(\n    `AI PMO response is not valid JSON. Parse error: ${error.message}`\n  );\n}\n\nconst requiredTopLevelFields = [\n  \"query_response\",\n  \"executive_summary\",\n  \"portfolio_assessment\",\n  \"project_deep_dive\",\n  \"top_concerns\",\n  \"governance_findings\",\n  \"recommended_management_actions\",\n  \"executive_attention_required\"\n];\n\nconst missingFields = requiredTopLevelFields.filter(\n  field => !(field in parsed)\n);\n\nif (missingFields.length > 0) {\n  throw new Error(\n    `AI PMO response is missing required fields: ${missingFields.join(\", \")}`\n  );\n}\n\n// -----------------------------\n// Top-level validation\n// -----------------------------\n\nif (\n  typeof parsed.query_response !== \"object\" ||\n  parsed.query_response === null ||\n  typeof parsed.executive_summary !== \"string\" ||\n  typeof parsed.portfolio_assessment !== \"object\" ||\n  parsed.portfolio_assessment === null ||\n  typeof parsed.project_deep_dive !== \"object\" ||\n  parsed.project_deep_dive === null ||\n  !Array.isArray(parsed.top_concerns) ||\n  !Array.isArray(parsed.governance_findings) ||\n  !Array.isArray(parsed.recommended_management_actions) ||\n  typeof parsed.executive_attention_required !== \"boolean\"\n) {\n  throw new Error(\n    \"AI PMO response contains invalid top-level field types.\"\n  );\n}\n\n// -----------------------------\n// query_response validation\n// -----------------------------\n\nconst queryResponseRequired = [\n  \"original_question\",\n  \"intent\",\n  \"target_project_id\"\n];\n\nconst missingQueryFields =\n  queryResponseRequired.filter(\n    field => !(field in parsed.query_response)\n  );\n\nif (missingQueryFields.length > 0) {\n  throw new Error(\n    `query_response is missing required fields: ${missingQueryFields.join(\", \")}`\n  );\n}\n\nif (\n  typeof parsed.query_response.original_question !== \"string\" ||\n  typeof parsed.query_response.intent !== \"string\" ||\n  !(\n    typeof parsed.query_response.target_project_id === \"string\" ||\n    parsed.query_response.target_project_id === null\n  )\n) {\n  throw new Error(\n    \"query_response contains invalid field types.\"\n  );\n}\n\n// -----------------------------\n// portfolio_assessment validation\n// -----------------------------\n\nif (\n  typeof parsed.portfolio_assessment.overall_health !== \"string\" ||\n  !Array.isArray(\n    parsed.portfolio_assessment.projects_requiring_attention\n  )\n) {\n  throw new Error(\n    \"portfolio_assessment contains invalid field types.\"\n  );\n}\n\n// -----------------------------\n// project_deep_dive validation\n// -----------------------------\n\nconst deepDiveRequired = [\n  \"project_id\",\n  \"project_name\",\n  \"overall_status\",\n  \"health_score\",\n  \"health_band\",\n  \"schedule_status\",\n  \"cost_status\",\n  \"scope_status\",\n  \"risk_status\",\n  \"actions\",\n  \"risks\",\n  \"issues\",\n  \"milestones\",\n  \"dependencies\"\n];\n\nconst missingDeepDiveFields =\n  deepDiveRequired.filter(\n    field => !(field in parsed.project_deep_dive)\n  );\n\nif (missingDeepDiveFields.length > 0) {\n  throw new Error(\n    `project_deep_dive is missing required fields: ${missingDeepDiveFields.join(\", \")}`\n  );\n}\n\nif (\n  !(\n    typeof parsed.project_deep_dive.project_id === \"string\" ||\n    parsed.project_deep_dive.project_id === null\n  ) ||\n  typeof parsed.project_deep_dive.project_name !== \"string\" ||\n  typeof parsed.project_deep_dive.overall_status !== \"string\" ||\n  !(\n    typeof parsed.project_deep_dive.health_score === \"number\" ||\n    parsed.project_deep_dive.health_score === null\n  ) ||\n  typeof parsed.project_deep_dive.health_band !== \"string\" ||\n  typeof parsed.project_deep_dive.schedule_status !== \"string\" ||\n  typeof parsed.project_deep_dive.cost_status !== \"string\" ||\n  typeof parsed.project_deep_dive.scope_status !== \"string\" ||\n  typeof parsed.project_deep_dive.risk_status !== \"string\" ||\n  !Array.isArray(parsed.project_deep_dive.actions) ||\n  !Array.isArray(parsed.project_deep_dive.risks) ||\n  !Array.isArray(parsed.project_deep_dive.issues) ||\n  !Array.isArray(parsed.project_deep_dive.milestones) ||\n  !Array.isArray(parsed.project_deep_dive.dependencies)\n) {\n  throw new Error(\n    \"project_deep_dive contains invalid field types.\"\n  );\n}\n\n// -----------------------------\n// top_concerns validation\n// -----------------------------\n\nfor (const item of parsed.top_concerns) {\n  if (\n    typeof item.priority !== \"string\" ||\n    typeof item.project_id !== \"string\" ||\n    typeof item.record_id !== \"string\" ||\n    typeof item.concern !== \"string\" ||\n    typeof item.business_implication !== \"string\"\n  ) {\n    throw new Error(\n      \"top_concerns contains an invalid item.\"\n    );\n  }\n}\n\n// -----------------------------\n// governance_findings validation\n// -----------------------------\n\nfor (const item of parsed.governance_findings) {\n  if (\n    typeof item.severity !== \"string\" ||\n    typeof item.project_id !== \"string\" ||\n    typeof item.record_id !== \"string\" ||\n    typeof item.finding !== \"string\"\n  ) {\n    throw new Error(\n      \"governance_findings contains an invalid item.\"\n    );\n  }\n}\n\n// -----------------------------\n// recommended_management_actions validation\n// -----------------------------\n\nfor (\n  const item of parsed.recommended_management_actions\n) {\n  if (\n    typeof item.priority !== \"string\" ||\n    typeof item.project_id !== \"string\" ||\n    typeof item.action !== \"string\" ||\n    typeof item.reason !== \"string\"\n  ) {\n    throw new Error(\n      \"recommended_management_actions contains an invalid item.\"\n    );\n  }\n}\n\n// -----------------------------\n// Project-specific scope validation\n// -----------------------------\n\nconst projectSpecificIntents = [\n  \"PROJECT_DEEP_DIVE\",\n  \"PROJECT_RISK_QUERY\",\n  \"PROJECT_ISSUE_QUERY\",\n  \"PROJECT_ACTION_QUERY\",\n  \"PROJECT_MILESTONE_QUERY\",\n  \"PROJECT_GOVERNANCE_QUERY\"\n];\n\nconst intent = parsed.query_response.intent;\nconst targetProjectId =\n  parsed.query_response.target_project_id;\n\nif (projectSpecificIntents.includes(intent)) {\n  if (!targetProjectId) {\n    throw new Error(\n      \"Project-specific intent requires target_project_id.\"\n    );\n  }\n\n  if (\n    parsed.project_deep_dive.project_id !== null &&\n    parsed.project_deep_dive.project_id !== targetProjectId\n  ) {\n    throw new Error(\n      \"project_deep_dive.project_id does not match target_project_id.\"\n    );\n  }\n\n  const invalidConcerns =\n    parsed.top_concerns.filter(\n      item => item.project_id !== targetProjectId\n    );\n\n  if (invalidConcerns.length > 0) {\n    throw new Error(\n      \"top_concerns contains records outside the target project.\"\n    );\n  }\n\n  const invalidFindings =\n    parsed.governance_findings.filter(\n      item => item.project_id !== targetProjectId\n    );\n\n  if (invalidFindings.length > 0) {\n    throw new Error(\n      \"governance_findings contains records outside the target project.\"\n    );\n  }\n\n  const invalidActions =\n    parsed.recommended_management_actions.filter(\n      item => item.project_id !== targetProjectId\n    );\n\n  if (invalidActions.length > 0) {\n    throw new Error(\n      \"recommended_management_actions contains records outside the target project.\"\n    );\n  }\n\n  const attentionProjects =\n    parsed.portfolio_assessment\n      .projects_requiring_attention;\n\n  const invalidAttentionProjects =\n    attentionProjects.filter(\n      projectId => projectId !== targetProjectId\n    );\n\n  if (invalidAttentionProjects.length > 0) {\n    throw new Error(\n      \"projects_requiring_attention contains unrelated projects for a project-specific query.\"\n    );\n  }\n}\n\n// -----------------------------\n// Return validated structure\n// -----------------------------\n\nreturn [\n  {\n    json: {\n      ai_response_valid: true,\n      validation_status: \"PASSED\",\n\n      query_response:\n        parsed.query_response,\n\n      executive_summary:\n        parsed.executive_summary,\n\n      portfolio_assessment:\n        parsed.portfolio_assessment,\n\n      project_deep_dive:\n        parsed.project_deep_dive,\n\n      top_concerns:\n        parsed.top_concerns,\n\n      governance_findings:\n        parsed.governance_findings,\n\n      recommended_management_actions:\n        parsed.recommended_management_actions,\n\n      executive_attention_required:\n        parsed.executive_attention_required,\n\n      parsed_ai_response:\n        parsed\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1712,
+        0
+      ],
+      "id": "193814c6-b912-4bab-b68f-22c224d3651b",
+      "name": "Parse AI PMO Response"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\n\nif (\n  data.validation_status !== \"PASSED\" ||\n  data.ai_response_valid !== true\n) {\n  throw new Error(\"AI PMO response has not passed validation.\");\n}\n\nconst query = data.query_response || {};\nconst intent = query.intent || \"GENERAL_PMO_QUERY\";\nconst targetProjectId = query.target_project_id || null;\n\nconst summary = data.executive_summary || \"\";\nconst assessment = data.portfolio_assessment || {};\nconst deepDive = data.project_deep_dive || {};\n\nconst concerns = Array.isArray(data.top_concerns)\n  ? data.top_concerns\n  : [];\n\nconst findings = Array.isArray(data.governance_findings)\n  ? data.governance_findings\n  : [];\n\nconst actions = Array.isArray(\n  data.recommended_management_actions\n)\n  ? data.recommended_management_actions\n  : [];\n\nconst attentionRequired =\n  data.executive_attention_required === true;\n\nconst projectSpecificIntents = [\n  \"PROJECT_DEEP_DIVE\",\n  \"PROJECT_RISK_QUERY\",\n  \"PROJECT_ISSUE_QUERY\",\n  \"PROJECT_ACTION_QUERY\",\n  \"PROJECT_MILESTONE_QUERY\",\n  \"PROJECT_GOVERNANCE_QUERY\"\n];\n\nconst isProjectSpecific =\n  projectSpecificIntents.includes(intent);\n\n// --------------------------------------------------\n// Helpers\n// --------------------------------------------------\n\nfunction field(item, ...keys) {\n  for (const key of keys) {\n    if (\n      item &&\n      item[key] !== undefined &&\n      item[key] !== null &&\n      item[key] !== \"\"\n    ) {\n      return item[key];\n    }\n  }\n\n  return \"\";\n}\n\nfunction safe(value, fallback = \"\") {\n  if (\n    value === undefined ||\n    value === null ||\n    value === \"\"\n  ) {\n    return fallback;\n  }\n\n  return String(value);\n}\n\nfunction normalizePriority(value) {\n  const raw = String(value || \"\")\n    .trim()\n    .toLowerCase();\n\n  if (\n    raw === \"p1\" ||\n    raw.includes(\"critical\") ||\n    raw.includes(\"highest\") ||\n    raw.includes(\"immediate\") ||\n    raw === \"1\" ||\n    raw.startsWith(\"1 \")\n  ) {\n    return \"Critical\";\n  }\n\n  if (\n    raw === \"p2\" ||\n    raw.includes(\"high\") ||\n    raw === \"2\" ||\n    raw.startsWith(\"2 \")\n  ) {\n    return \"High\";\n  }\n\n  if (\n    raw === \"p3\" ||\n    raw.includes(\"medium\") ||\n    raw === \"3\" ||\n    raw.startsWith(\"3 \")\n  ) {\n    return \"Medium\";\n  }\n\n  if (\n    raw === \"p4\" ||\n    raw === \"4\" ||\n    raw.startsWith(\"4 \") ||\n    raw.includes(\"low\")\n  ) {\n    return \"Low\";\n  }\n\n  if (\n    raw === \"p5\" ||\n    raw === \"5\" ||\n    raw.startsWith(\"5 \")\n  ) {\n    return \"Low\";\n  }\n\n  return safe(value, \"Medium\");\n}\n\nfunction addSection(lines, title) {\n  lines.push(\"\");\n  lines.push(`## ${title}`);\n  lines.push(\"\");\n}\n\n// --------------------------------------------------\n// Record formatting\n// --------------------------------------------------\n\nfunction addRecordList(lines, records, type) {\n  if (\n    !Array.isArray(records) ||\n    records.length === 0\n  ) {\n    lines.push(\n      `No ${type.toLowerCase()} records returned.`\n    );\n    return;\n  }\n\n  records.forEach((item, index) => {\n\n    // ---------------- ACTION ----------------\n\n    if (type === \"ACTION\") {\n      const id = field(\n        item,\n        \"Action ID\",\n        \"action_id\"\n      );\n\n      const description = field(\n        item,\n        \"Action\",\n        \"action\"\n      );\n\n      const priority = field(\n        item,\n        \"Priority\",\n        \"priority\"\n      );\n\n      const status = field(\n        item,\n        \"Status\",\n        \"status\"\n      );\n\n      const owner = field(\n        item,\n        \"Owner\",\n        \"owner\"\n      );\n\n      const dueDate = field(\n        item,\n        \"Due Date\",\n        \"due_date\"\n      );\n\n      const escalation = field(\n        item,\n        \"Escalation Required\",\n        \"escalation_required\"\n      );\n\n      lines.push(\n        `${index + 1}. **${safe(id, \"Unknown Action\")} — ${safe(description, \"No description\")}**`\n      );\n\n      lines.push(\n        `   Priority: ${safe(priority, \"Not specified\")} | Status: ${safe(status, \"Not specified\")}`\n      );\n\n      lines.push(\n        `   Owner: ${safe(owner, \"Not assigned\")} | Due: ${safe(dueDate, \"Not specified\")}`\n      );\n\n      lines.push(\n        `   Escalation Required: ${safe(escalation, \"Not specified\")}`\n      );\n\n      lines.push(\"\");\n    }\n\n    // ---------------- RISK ----------------\n\n    if (type === \"RISK\") {\n      const id = field(\n        item,\n        \"Risk ID\",\n        \"risk_id\"\n      );\n\n      const description = field(\n        item,\n        \"Risk\",\n        \"risk\"\n      );\n\n      const probability = field(\n        item,\n        \"Probability\",\n        \"probability\"\n      );\n\n      const impact = field(\n        item,\n        \"Impact\",\n        \"impact\"\n      );\n\n      const score = field(\n        item,\n        \"Risk Score\",\n        \"risk_score\"\n      );\n\n      const status = field(\n        item,\n        \"Status\",\n        \"status\"\n      );\n\n      const owner = field(\n        item,\n        \"Owner\",\n        \"owner\"\n      );\n\n      const mitigation = field(\n        item,\n        \"Mitigation\",\n        \"mitigation\"\n      );\n\n      const escalation = field(\n        item,\n        \"Escalation Required\",\n        \"escalation_required\"\n      );\n\n      lines.push(\n        `${index + 1}. **${safe(id, \"Unknown Risk\")} — ${safe(description, \"No description\")}**`\n      );\n\n      lines.push(\n        `   Probability: ${safe(probability, \"Not specified\")} | Impact: ${safe(impact, \"Not specified\")} | Risk Score: ${safe(score, \"Not specified\")}`\n      );\n\n      lines.push(\n        `   Status: ${safe(status, \"Not specified\")} | Owner: ${safe(owner, \"Not assigned\")}`\n      );\n\n      lines.push(\n        `   Mitigation: ${safe(mitigation, \"Not defined\")}`\n      );\n\n      lines.push(\n        `   Escalation Required: ${safe(escalation, \"Not specified\")}`\n      );\n\n      lines.push(\"\");\n    }\n\n    // ---------------- ISSUE ----------------\n\n    if (type === \"ISSUE\") {\n      const id = field(\n        item,\n        \"Issue ID\",\n        \"issue_id\"\n      );\n\n      const description = field(\n        item,\n        \"Issue\",\n        \"issue\"\n      );\n\n      const severity = field(\n        item,\n        \"Severity\",\n        \"severity\"\n      );\n\n      const status = field(\n        item,\n        \"Status\",\n        \"status\"\n      );\n\n      const owner = field(\n        item,\n        \"Owner\",\n        \"owner\"\n      );\n\n      const targetDate = field(\n        item,\n        \"Target Resolution Date\",\n        \"target_resolution_date\"\n      );\n\n      const businessImpact = field(\n        item,\n        \"Business Impact\",\n        \"business_impact\"\n      );\n\n      const escalation = field(\n        item,\n        \"Escalation Required\",\n        \"escalation_required\"\n      );\n\n      lines.push(\n        `${index + 1}. **${safe(id, \"Unknown Issue\")} — ${safe(description, \"No description\")}**`\n      );\n\n      lines.push(\n        `   Severity: ${safe(severity, \"Not specified\")} | Status: ${safe(status, \"Not specified\")}`\n      );\n\n      lines.push(\n        `   Owner: ${safe(owner, \"Not assigned\")} | Target Resolution: ${safe(targetDate, \"Not specified\")}`\n      );\n\n      lines.push(\n        `   Business Impact: ${safe(businessImpact, \"Not specified\")}`\n      );\n\n      lines.push(\n        `   Escalation Required: ${safe(escalation, \"Not specified\")}`\n      );\n\n      lines.push(\"\");\n    }\n\n    // ---------------- MILESTONE ----------------\n\n    if (type === \"MILESTONE\") {\n      const id = field(\n        item,\n        \"Milestone ID\",\n        \"milestone_id\"\n      );\n\n      const description = field(\n        item,\n        \"Milestone\",\n        \"milestone\"\n      );\n\n      const plannedDate = field(\n        item,\n        \"Planned Date\",\n        \"planned_date\"\n      );\n\n      const forecastDate = field(\n        item,\n        \"Forecast Date\",\n        \"forecast_date\"\n      );\n\n      const status = field(\n        item,\n        \"Status\",\n        \"status\"\n      );\n\n      const criticalMilestone = field(\n        item,\n        \"Critical Milestone\",\n        \"critical_milestone\"\n      );\n\n      const owner = field(\n        item,\n        \"Owner\",\n        \"owner\"\n      );\n\n      lines.push(\n        `${index + 1}. **${safe(id, \"Unknown Milestone\")} — ${safe(description, \"No description\")}**`\n      );\n\n      lines.push(\n        `   Planned: ${safe(plannedDate, \"Not specified\")} | Forecast: ${safe(forecastDate, \"Not specified\")}`\n      );\n\n      lines.push(\n        `   Status: ${safe(status, \"Not specified\")} | Critical Milestone: ${safe(criticalMilestone, \"Not specified\")}`\n      );\n\n      lines.push(\n        `   Owner: ${safe(owner, \"Not assigned\")}`\n      );\n\n      lines.push(\"\");\n    }\n\n    // ---------------- DEPENDENCY ----------------\n\n    if (type === \"DEPENDENCY\") {\n      const id = field(\n        item,\n        \"Dependency ID\",\n        \"dependency_id\"\n      );\n\n      const description = field(\n        item,\n        \"Dependency\",\n        \"dependency\"\n      );\n\n      const dependencyType = field(\n        item,\n        \"Dependency Type\",\n        \"dependency_type\"\n      );\n\n      const status = field(\n        item,\n        \"Status\",\n        \"status\"\n      );\n\n      const dependentOn = field(\n        item,\n        \"Dependent On\",\n        \"dependent_on\"\n      );\n\n      const owner = field(\n        item,\n        \"Owner\",\n        \"owner\"\n      );\n\n      const requiredBy = field(\n        item,\n        \"Required By Date\",\n        \"required_by_date\"\n      );\n\n      const impactIfDelayed = field(\n        item,\n        \"Impact if Delayed\",\n        \"impact_if_delayed\"\n      );\n\n      lines.push(\n        `${index + 1}. **${safe(id, \"Unknown Dependency\")} — ${safe(description, \"No description\")}**`\n      );\n\n      lines.push(\n        `   Type: ${safe(dependencyType, \"Not specified\")} | Status: ${safe(status, \"Not specified\")}`\n      );\n\n      lines.push(\n        `   Dependent On: ${safe(dependentOn, \"Not specified\")}`\n      );\n\n      lines.push(\n        `   Owner: ${safe(owner, \"Not assigned\")} | Required By: ${safe(requiredBy, \"Not specified\")}`\n      );\n\n      lines.push(\n        `   Impact if Delayed: ${safe(impactIfDelayed, \"Not specified\")}`\n      );\n\n      lines.push(\"\");\n    }\n  });\n}\n\n// --------------------------------------------------\n// Build briefing\n// --------------------------------------------------\n\nconst lines = [];\n\nif (isProjectSpecific) {\n  lines.push(\n    \"# AI PMO Intelligence — Project Briefing\"\n  );\n} else {\n  lines.push(\n    \"# AI PMO Intelligence — Portfolio Briefing\"\n  );\n}\n\nlines.push(\"\");\n\nlines.push(\n  `**Question:** ${safe(query.original_question)}`\n);\n\nlines.push(\n  `**Detected Intent:** ${safe(intent)}`\n);\n\nif (targetProjectId) {\n  lines.push(\n    `**Target Project:** ${targetProjectId}`\n  );\n}\n\n// --------------------------------------------------\n// Executive Summary\n// --------------------------------------------------\n\naddSection(\n  lines,\n  \"Executive Summary\"\n);\n\nlines.push(\n  safe(\n    summary,\n    \"No executive summary available.\"\n  )\n);\n\n// --------------------------------------------------\n// Project-specific response\n// --------------------------------------------------\n\nif (isProjectSpecific) {\n\n  addSection(\n    lines,\n    \"Project Health\"\n  );\n\n  lines.push(\n    `**Project ID:** ${safe(\n      deepDive.project_id,\n      targetProjectId || \"\"\n    )}`\n  );\n\n  lines.push(\n    `**Project Name:** ${safe(\n      deepDive.project_name\n    )}`\n  );\n\n  lines.push(\n    `**Overall Status:** ${safe(\n      deepDive.overall_status\n    )}`\n  );\n\n  lines.push(\n    `**Health Score:** ${safe(\n      deepDive.health_score\n    )}`\n  );\n\n  lines.push(\n    `**Health Band:** ${safe(\n      deepDive.health_band\n    )}`\n  );\n\n  lines.push(\n    `**Schedule Status:** ${safe(\n      deepDive.schedule_status\n    )}`\n  );\n\n  lines.push(\n    `**Cost Status:** ${safe(\n      deepDive.cost_status\n    )}`\n  );\n\n  lines.push(\n    `**Scope Status:** ${safe(\n      deepDive.scope_status\n    )}`\n  );\n\n  lines.push(\n    `**Risk Status:** ${safe(\n      deepDive.risk_status\n    )}`\n  );\n\n  // ACTIONS\n  if (\n    intent === \"PROJECT_DEEP_DIVE\" ||\n    intent === \"PROJECT_ACTION_QUERY\"\n  ) {\n    addSection(\n      lines,\n      \"Actions\"\n    );\n\n    addRecordList(\n      lines,\n      deepDive.actions,\n      \"ACTION\"\n    );\n  }\n\n  // RISKS\n  if (\n    intent === \"PROJECT_DEEP_DIVE\" ||\n    intent === \"PROJECT_RISK_QUERY\"\n  ) {\n    addSection(\n      lines,\n      \"Risks\"\n    );\n\n    addRecordList(\n      lines,\n      deepDive.risks,\n      \"RISK\"\n    );\n  }\n\n  // ISSUES\n  if (\n    intent === \"PROJECT_DEEP_DIVE\" ||\n    intent === \"PROJECT_ISSUE_QUERY\"\n  ) {\n    addSection(\n      lines,\n      \"Issues\"\n    );\n\n    addRecordList(\n      lines,\n      deepDive.issues,\n      \"ISSUE\"\n    );\n  }\n\n  // MILESTONES\n  if (\n    intent === \"PROJECT_DEEP_DIVE\" ||\n    intent === \"PROJECT_MILESTONE_QUERY\"\n  ) {\n    addSection(\n      lines,\n      \"Milestones\"\n    );\n\n    addRecordList(\n      lines,\n      deepDive.milestones,\n      \"MILESTONE\"\n    );\n  }\n\n  // DEPENDENCIES\n  if (\n    intent === \"PROJECT_DEEP_DIVE\"\n  ) {\n    addSection(\n      lines,\n      \"Dependencies\"\n    );\n\n    addRecordList(\n      lines,\n      deepDive.dependencies,\n      \"DEPENDENCY\"\n    );\n  }\n}\n\n// --------------------------------------------------\n// Portfolio response\n// --------------------------------------------------\n\nif (!isProjectSpecific) {\n\n  addSection(\n    lines,\n    \"Portfolio Health\"\n  );\n\n  lines.push(\n    safe(\n      assessment.overall_health,\n      \"No portfolio assessment available.\"\n    )\n  );\n\n  const attentionProjects =\n    Array.isArray(\n      assessment.projects_requiring_attention\n    )\n      ? assessment.projects_requiring_attention\n      : [];\n\n  if (\n    attentionProjects.length > 0\n  ) {\n    addSection(\n      lines,\n      \"Projects Requiring Attention\"\n    );\n\n    attentionProjects.forEach(\n      projectId => {\n        lines.push(\n          `- ${projectId}`\n        );\n      }\n    );\n  }\n}\n\n// --------------------------------------------------\n// Top Concerns\n// --------------------------------------------------\n\naddSection(\n  lines,\n  \"Top Concerns\"\n);\n\nif (\n  concerns.length === 0\n) {\n\n  lines.push(\n    \"No top concerns identified.\"\n  );\n\n} else {\n\n  concerns.forEach(\n    (item, index) => {\n\n      const priority =\n        normalizePriority(\n          item.priority\n        );\n\n      lines.push(\n        `${index + 1}. **[${priority}] ${safe(item.project_id)} / ${safe(item.record_id)}**`\n      );\n\n      lines.push(\n        `   Concern: ${safe(item.concern)}`\n      );\n\n      lines.push(\n        `   Business Implication: ${safe(item.business_implication)}`\n      );\n\n      lines.push(\"\");\n    }\n  );\n}\n\n// --------------------------------------------------\n// Governance Findings\n// --------------------------------------------------\n\naddSection(\n  lines,\n  \"Governance Findings\"\n);\n\nif (\n  findings.length === 0\n) {\n\n  lines.push(\n    \"No governance findings identified.\"\n  );\n\n} else {\n\n  findings.forEach(\n    (item, index) => {\n\n      const severity =\n        normalizePriority(\n          item.severity\n        );\n\n      lines.push(\n        `${index + 1}. **[${severity}] ${safe(item.project_id)} / ${safe(item.record_id)}**`\n      );\n\n      lines.push(\n        `   ${safe(item.finding)}`\n      );\n\n      lines.push(\"\");\n    }\n  );\n}\n\n// --------------------------------------------------\n// Recommended Management Actions\n// --------------------------------------------------\n\naddSection(\n  lines,\n  \"Recommended Management Actions\"\n);\n\nif (\n  actions.length === 0\n) {\n\n  lines.push(\n    \"No management actions recommended.\"\n  );\n\n} else {\n\n  actions.forEach(\n    (item, index) => {\n\n      const priority =\n        normalizePriority(\n          item.priority\n        );\n\n      lines.push(\n        `${index + 1}. **[${priority}] ${safe(item.project_id)}**`\n      );\n\n      lines.push(\n        `   Action: ${safe(item.action)}`\n      );\n\n      lines.push(\n        `   Reason: ${safe(item.reason)}`\n      );\n\n      lines.push(\"\");\n    }\n  );\n}\n\n// --------------------------------------------------\n// Executive Attention\n// --------------------------------------------------\n\naddSection(\n  lines,\n  \"Executive Attention\"\n);\n\nlines.push(\n  attentionRequired\n    ? \"**Executive Attention Required: YES**\"\n    : \"**Executive Attention Required: NO**\"\n);\n\n// --------------------------------------------------\n// Final output\n// --------------------------------------------------\n\nconst executiveBriefing =\n  lines.join(\"\\n\").trim();\n\nreturn [\n  {\n    json: {\n      briefing_status:\n        \"READY\",\n\n      briefing_type:\n        isProjectSpecific\n          ? \"PROJECT_SPECIFIC\"\n          : \"PORTFOLIO\",\n\n      query_response:\n        query,\n\n      executive_attention_required:\n        attentionRequired,\n\n      executive_briefing:\n        executiveBriefing,\n\n      executive_summary:\n        summary,\n\n      portfolio_assessment:\n        assessment,\n\n      project_deep_dive:\n        deepDive,\n\n      top_concerns:\n        concerns,\n\n      governance_findings:\n        findings,\n\n      recommended_management_actions:\n        actions\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1936,
+        0
+      ],
+      "id": "dc426e07-1884-4d25-aaa7-a0e7287dad1c",
+      "name": "Build Executive Briefing"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "efee9ec3-127d-4ac2-9824-6c0c4d446fd9",
+              "name": "output",
+              "value": "={{ $json.executive_briefing }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2160,
+        0
+      ],
+      "id": "c6fa1bbd-6d6d-4a56-9e07-bc9cf46b0be3",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-5-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=={{ `\nYou are an AI PMO Intelligence Assistant supporting project and portfolio governance.\n\nYour task is to answer the user's PMO question using only the supplied portfolio data and deterministic governance exceptions.\n\nYou must respect the detected query intent and target project.\n\n==================================================\nUSER QUERY CONTEXT\n==================================================\n\nUSER QUESTION:\n${$json.query_context.original_question}\n\nDETECTED INTENT:\n${$json.query_context.intent}\n\nTARGET PROJECT ID:\n${$json.query_context.project_id}\n\n==================================================\nQUERY ROUTING RULES\n==================================================\n\n1. If intent = PORTFOLIO_SUMMARY:\n   Produce an executive portfolio-level assessment across all projects.\n\n2. If intent = PROJECT_DEEP_DIVE:\n   Focus analysis on the specified Project ID.\n   Include:\n   - project status\n   - health score and health band\n   - schedule\n   - cost\n   - scope\n   - risk status\n   - actions\n   - risks\n   - issues\n   - milestones\n   - dependencies\n   - governance exceptions\n   - recommended management actions\n\n3. If intent = PORTFOLIO_RISK_QUERY:\n   Focus on portfolio risks.\n   Consider:\n   - Probability\n   - Impact\n   - Risk Score\n   - Owner\n   - Mitigation\n   - Status\n   - Escalation Required\n   - related governance exceptions\n\n4. If intent = PROJECT_RISK_QUERY:\n   Focus only on risks belonging to the specified Project ID.\n\n5. If intent = PORTFOLIO_ISSUE_QUERY:\n   Focus on issues across the portfolio and related governance exceptions.\n\n6. If intent = PROJECT_ISSUE_QUERY:\n   Focus only on issues belonging to the specified Project ID.\n\n7. If intent = PORTFOLIO_ACTION_QUERY:\n   Focus on actions across the portfolio.\n   Prioritize:\n   - Overdue actions\n   - Critical actions\n   - High-priority actions\n   - Escalation Required = Yes\n\n8. If intent = PROJECT_ACTION_QUERY:\n   Focus only on actions belonging to the specified Project ID.\n\n9. If intent = PORTFOLIO_MILESTONE_QUERY:\n   Focus on:\n   - Delayed milestones\n   - At Risk milestones\n   - Critical Milestone = Yes\n   across the portfolio.\n\n10. If intent = PROJECT_MILESTONE_QUERY:\n    Focus only on milestones belonging to the specified Project ID.\n\n11. If intent = PORTFOLIO_GOVERNANCE_QUERY:\n    Focus on deterministic governance exceptions across the portfolio.\n\n12. If intent = PROJECT_GOVERNANCE_QUERY:\n    Focus only on deterministic governance exceptions related to the specified Project ID.\n\n13. If intent = GENERAL_PMO_QUERY:\n    Answer the original question using only the supplied PMO data.\n\n14. Do not ignore the user's original question and fall back to a generic portfolio summary.\n\n15. For project-specific intents, do not discuss unrelated projects unless another project or record is directly required to explain a dependency or contradiction.\n\n16. For project-specific intents, filter:\n    - Projects\n    - Actions\n    - Risks\n    - Issues\n    - Milestones\n    - Dependencies\n    - Governance Exceptions\n    using the specified Project ID.\n\n17. If the specified Project ID does not exist in the supplied Projects data:\n    - state that the Project ID was not found\n    - do not invent project information\n    - do not substitute another Project ID\n\n==================================================\nGROUNDING AND GOVERNANCE RULES\n==================================================\n\n18. Use only the supplied data.\n\n19. Do not invent:\n    - facts\n    - dates\n    - risks\n    - issues\n    - actions\n    - milestones\n    - dependencies\n    - owners\n    - lifecycle states\n    - financial impacts\n    - delays\n    - business impacts\n    - decisions\n    - recommendations unrelated to the supplied data\n\n20. Distinguish clearly between:\n    - source facts\n    - deterministic governance findings\n    - AI recommendations\n\n21. Treat deterministic governance exceptions as confirmed rule-based findings.\n\n22. The severity assigned to a governance exception applies only to the governance exception.\n\n23. Governance exception severity must not be presented as the severity of the underlying:\n    - Risk\n    - Issue\n    - Action\n    - Milestone\n    - Dependency\n    - Project\n    unless the source record has that same classification.\n\n24. Prioritize Critical findings first, followed by High, then Medium.\n\n25. Identify contradictions between:\n    - Project status\n    - RAID data\n    - Actions\n    - Milestones\n    - Dependencies\n    only when supported by the data or deterministic exceptions.\n\n26. Keep the response concise enough for executive review.\n\n27. Do not claim that any recommendation has already been implemented.\n\n28. Refer to records using their exact IDs where relevant:\n    - Project ID\n    - Risk ID\n    - Issue ID\n    - Action ID\n    - Milestone ID\n    - Dependency ID\n\n29. Never upgrade or downgrade a source:\n    - severity\n    - priority\n    - status\n    - probability\n    - impact\n    - health classification\n    - escalation status\n\n30. Preserve exact source classifications.\n\nExample:\n\nIf:\nIssue Severity = High\n\nDo not describe it as:\nCritical.\n\n31. A deterministic exception severity does not change the classification of the underlying record.\n\n32. Do not convert a possible business impact into a certain outcome.\n\nUse conditional language such as:\n- may\n- could\n- at risk\n- potential\nwhen source data is conditional.\n\n33. Do not state that:\n    - failure\n    - disruption\n    - financial loss\n    - schedule slip\n    - operational impact\n    - launch failure\nwill occur unless the supplied data explicitly states that it has already occurred.\n\n34. Before returning the response, cross-check every referenced record against source data for:\n    - Project ID\n    - Record ID\n    - Severity\n    - Priority\n    - Status\n    - Probability\n    - Impact\n    - Risk Score\n    - Owner\n    - Dates\n    - Escalation Required\n\n==================================================\nRISK CLASSIFICATION RULES\n==================================================\n\n35. Never describe a Risk as:\n    - Critical\n    - High\n    - Medium\n    - Low\nunless the Risk source record explicitly contains a Severity field with that value.\n\n36. For Risks, describe classification only using available source fields:\n    - Probability\n    - Impact\n    - Risk Score\n    - Status\n\n37. Do not use:\n    \"Critical risk\"\n    \"High-severity risk\"\n    \"Medium-severity risk\"\n    \"Low-severity risk\"\nunless such a Severity field exists in the Risk source record.\n\n38. Correct Risk phrasing example:\n\nIncorrect:\n\"Critical risk RSK-007\"\n\nIncorrect:\n\"High-severity risk RSK-005\"\n\nCorrect:\n\"RSK-007 is High Probability / High Impact with Risk Score 9.\"\n\nCorrect:\n\"RSK-007 is High Probability / High Impact with Risk Score 9 and has Critical governance exceptions for missing ownership and mitigation.\"\n\n39. If a Risk has a Critical governance exception, say:\n\n\"Risk RSK-007 has Critical governance exceptions.\"\n\nor:\n\n\"RSK-007 is High Probability / High Impact with Risk Score 9 and has Critical governance exceptions.\"\n\n40. Never use governance exception severity as shorthand for Risk classification.\n\n==================================================\nBUSINESS IMPACT RULES\n==================================================\n\n41. Do not introduce business impacts not explicitly present in the supplied data.\n\n42. Do not infer or introduce:\n    - revenue impact\n    - customer impact\n    - user experience impact\n    - compliance impact\n    - financial loss\n    - reputational damage\n    - operational outage\n    - service failure\n    - launch failure\nunless explicitly supported by source data.\n\n43. Do not describe Projects as:\n    - Active\n    - Closed\n    - Completed\n    - Suspended\n    - On Hold\nor any other lifecycle state unless explicitly present in the Project source record.\n\n44. For business implications, prefer exact wording or a close factual paraphrase from:\n    - Business Impact\n    - Impact if Delayed\n    - Risk description\n    - Issue description\n    - Action status\n    - Milestone status\n    - Dependency status\n\n45. If source data supports only schedule exposure, state only schedule exposure.\n\nExample:\n\nIncorrect:\n\"CRM delay may impact revenue or business operations.\"\n\nCorrect:\n\"Production deployment may slip.\"\n\n46. If an implication is an inference rather than an explicit source statement, prefix it with:\n\n\"Potential implication:\"\n\nand keep the inference tightly limited to what the source supports.\n\n47. Never introduce a new impact category simply because it is plausible.\n\nExample:\n\nIncorrect:\n\"Performance defects may cause degraded user experience.\"\n\nCorrect:\n\"Launch readiness is at risk.\"\n\n==================================================\nCAUSALITY RULES\n==================================================\n\n48. Do not invent causal relationships between records.\n\n49. Only connect records when supported by:\n    - matching Project ID\n    - explicit Dependency data\n    - explicit impact wording\n    - clearly related source descriptions\n\n50. Do not say one record caused another unless source data explicitly supports causation.\n\nPrefer:\n    - is associated with\n    - contributes to the current exposure\n    - is relevant to\n    - coincides with\n\n==================================================\nRECORD-SPECIFIC RULES\n==================================================\n\n51. For Issues:\n    preserve exact Severity and Status.\n\n52. For Actions:\n    preserve exact Priority and Status.\n\n53. For Milestones:\n    distinguish between:\n    - Critical Milestone = Yes\n    - governance exception severity\n\nA Critical Milestone with a High governance exception must not be described as a High milestone.\n\n54. For Projects:\n    preserve exact:\n    - Overall Status\n    - Schedule Status\n    - Cost Status\n    - Scope Status\n    - Risk Status\n    - Health Score\n    - Health Band\n\n55. A Green project may only be described as having a governance/status contradiction when deterministic governance exceptions explicitly identify that contradiction.\n\n==================================================\nRECOMMENDATION RULES\n==================================================\n\n56. Recommendations must be proposed management actions.\n\n57. Do not imply recommendations have been:\n    - approved\n    - assigned\n    - executed\n    - completed\n\n58. Recommended actions must be supported by source data or deterministic governance exceptions.\n\n59. Do not invent deadlines for recommendations.\n\n60. Do not invent owners for recommendations.\n\nIf the source has no owner, say:\n\"Assign an owner.\"\n\n61. Do not invent:\n    - executive sponsor\n    - steering committee\n    - stakeholder\n    - management recipient\n    - escalation recipient\nunless explicitly present in the supplied data.\n\n62. Do not use generic phrases such as:\n    \"notify stakeholders\"\n    \"inform executives\"\n    \"escalate to steering committee\"\nunless such recipients exist in the source data.\n\n63. If escalation is required but recipient is unknown, say:\n    \"Escalate according to governance process.\"\n\n64. When recommending forecast updates, refer to specific record IDs.\n\nIncorrect:\n\"Confirm updated forecast to stakeholders.\"\n\nCorrect:\n\"Confirm the updated forecast for MLS-001 and MLS-002.\"\n\n==================================================\nOUTPUT SEPARATION RULES\n==================================================\n\n65. Keep factual findings and recommendations separate.\n\ngovernance_findings:\n    factual deterministic findings only.\n\nrecommended_management_actions:\n    proposed actions only.\n\n66. In top_concerns, priority represents executive attention priority.\n\nIt must not be presented as the underlying Risk severity.\n\n67. Use deterministic governance exceptions as the authoritative source for:\n    - exception type\n    - exception severity\n    - project ID\n    - record ID\n    - exception description\n\n68. Do not omit Critical deterministic governance exceptions relevant to the user's query.\n\n69. For project-specific queries:\n    governance_findings must include only findings relating to the target Project ID.\n\n70. For portfolio queries:\n    governance_findings may contain findings across all projects.\n\n71. executive_attention_required should be true when relevant data contains:\n    - Critical governance exceptions\n    - Critical open issues requiring management attention\n    - other directly supported Critical conditions\n\n==================================================\nFINAL VALIDATION RULES\n==================================================\n\n72. Return valid JSON only.\n\n73. Do not include markdown.\n\n74. Do not include text before or after the JSON.\n\n75. Do not wrap JSON in code fences.\n\n76. Ensure all JSON property names exactly match the required structure.\n\n77. Before returning the final JSON, perform this grounding check:\n\n- No invented facts\n- No invented impacts\n- No severity upgrades\n- No unsupported lifecycle states\n- No unsupported causal claims\n- No completed-action claims\n- No unsupported owners\n- No unsupported recipients\n- No unsupported financial implications\n- No unrelated projects in project-specific queries\n\n78. For PROJECT_DEEP_DIVE and every other project-specific intent,\n    the entire response must remain scoped to TARGET PROJECT ID.\n\n79. For a project-specific query:\n\n    portfolio_assessment.overall_health must describe only the target project.\n\n    Example:\n    \"PRJ-003 is Red with Health Score 42 and Health Band Red.\"\n\n80. For a project-specific query:\n\n    portfolio_assessment.projects_requiring_attention must contain only\n    the TARGET PROJECT ID when that project requires attention.\n\n    Do not include unrelated Project IDs.\n\n81. For a project-specific query, executive_summary must not summarize\n    the overall portfolio or mention unrelated projects.\n\n82. For project-specific queries, every Project ID appearing anywhere in:\n    - executive_summary\n    - portfolio_assessment\n    - project_deep_dive\n    - top_concerns\n    - governance_findings\n    - recommended_management_actions\n\n    must equal TARGET PROJECT ID unless an explicit cross-project dependency\n    in the supplied data requires another Project ID.\n\n83. Never describe Risks collectively using severity-like wording such as:\n    - critical risks\n    - high risks\n    - severe risks\n    - critical performance/security risks\n\n    unless a Risk Severity field explicitly exists.\n\n84. When summarizing multiple Risks, use wording such as:\n\n    \"High Probability / High Impact risks with Risk Score 9\"\n\n    or:\n\n    \"Risks requiring management attention\"\n\n85. Recommendations must not assume that an Action, Issue, Risk,\n    Dependency or Milestone should be closed unless closure is directly\n    supported by the source data.\n\n86. Prefer:\n    \"Review and address DEP-005.\"\n    \"Confirm the current status of DEP-005.\"\n    \"Resolve the dependency conditions affecting DEP-005.\"\n\n    rather than:\n    \"Confirm DEP-005 closure.\"\n\n87. Before returning a PROJECT_DEEP_DIVE response, perform a scope check:\n\n    - No unrelated Project IDs\n    - No overall portfolio statistics\n    - No unrelated projects requiring attention\n    - No unrelated governance findings\n    - No unrelated recommendations\n\n89. In executive_summary, never use compound phrases such as:\n    - Critical/High-probability risk\n    - Critical/High-impact risk\n    - Critical/High risk\n\n    For Risks, always state:\n    \"High Probability / High Impact with Risk Score 9\"\n\n    If Critical governance exceptions exist, state them separately.\n\n    Correct example:\n    \"RSK-007 is High Probability / High Impact with Risk Score 9 and has Critical governance exceptions for missing ownership and mitigation.\"\n\n90. Do not invent communication recipients or stakeholder groups.\n\nIf the source data does not explicitly identify who should receive\na communication, do not state recipients such as:\n- affected teams\n- stakeholders\n- management\n- executives\n- project team\n- business users\n\nInstead say:\n\"confirm and document the revised forecast\"\nor\n\"update the relevant project records.\"\n\nDo not infer recipients from project context.\n\n==================================================\nOUTPUT STRUCTURE\n==================================================\n\nReturn VALID JSON ONLY using this exact structure:\n\n{\n  \"query_response\": {\n    \"original_question\": \"\",\n    \"intent\": \"\",\n    \"target_project_id\": null\n  },\n  \"executive_summary\": \"\",\n  \"portfolio_assessment\": {\n    \"overall_health\": \"\",\n    \"projects_requiring_attention\": []\n  },\n  \"project_deep_dive\": {\n    \"project_id\": null,\n    \"project_name\": \"\",\n    \"overall_status\": \"\",\n    \"health_score\": null,\n    \"health_band\": \"\",\n    \"schedule_status\": \"\",\n    \"cost_status\": \"\",\n    \"scope_status\": \"\",\n    \"risk_status\": \"\",\n    \"actions\": [],\n    \"risks\": [],\n    \"issues\": [],\n    \"milestones\": [],\n    \"dependencies\": []\n  },\n  \"top_concerns\": [\n    {\n      \"priority\": \"\",\n      \"project_id\": \"\",\n      \"record_id\": \"\",\n      \"concern\": \"\",\n      \"business_implication\": \"\"\n    }\n  ],\n  \"governance_findings\": [\n    {\n      \"severity\": \"\",\n      \"project_id\": \"\",\n      \"record_id\": \"\",\n      \"finding\": \"\"\n    }\n  ],\n  \"recommended_management_actions\": [\n    {\n      \"priority\": \"\",\n      \"project_id\": \"\",\n      \"action\": \"\",\n      \"reason\": \"\"\n    }\n  ],\n  \"executive_attention_required\": true\n}\n\n==================================================\nQUERY\n==================================================\n\nUSER QUESTION:\n${$json.query_context.original_question}\n\nDETECTED INTENT:\n${$json.query_context.intent}\n\nTARGET PROJECT ID:\n${$json.query_context.project_id}\n\n==================================================\nPORTFOLIO DATA\n==================================================\n\n${JSON.stringify($json.portfolio)}\n\n==================================================\nDETERMINISTIC GOVERNANCE EXCEPTIONS\n==================================================\n\n${JSON.stringify($json.governance_exceptions)}\n\n==================================================\nGOVERNANCE SUMMARY\n==================================================\n\n${JSON.stringify($json.governance_summary)}\n` }}"
+            },
+            {
+              "role": "system",
+              "content": "You are an AI PMO Intelligence Assistant supporting project and portfolio governance."
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        1376,
+        0
+      ],
+      "id": "1e8b75d7-5cb5-4916-b69f-99c50e2f1988",
+      "name": "AI PMO Intelligence",
+      "credentials": {
+        "openAiApi": {
+          "id": "xqs1O62E0wRLzXaP",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseMode": "lastNode"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -848,
+        0
+      ],
+      "id": "f0b78348-58bd-440e-83d3-05e5b6c15d10",
+      "name": "When chat message received",
+      "webhookId": "2693cf26-9f15-4f9e-a3aa-d1053ab7449c"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "19873b3d-96ae-4648-afa0-f9712762d6d3",
+              "name": "question",
+              "value": "={{ $json.chatInput }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -688,
+        0
+      ],
+      "id": "7f38c595-2065-4dfb-b62d-f9ebe6822523",
+      "name": "User Question"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "48ec19bb-5b6e-4453-bc45-63d518ea8532",
+              "name": "=output",
+              "value": "={{ \"Hello! How can I help you with your PMO portfolio today?\" }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -128,
+        -320
+      ],
+      "id": "1da91252-d4dd-41d0-aaa7-8bfa349db32e",
+      "name": "Edit Fields2"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\nconst originalQuestion = String(input.question || \"\").trim();\nconst question = originalQuestion.toLowerCase();\n\nlet intent = \"GENERAL_PMO_QUERY\";\nlet project_id = null;\n\n// Detect Project ID\nconst projectMatch = question.match(/\\bprj-\\d+\\b/i);\n\nif (projectMatch) {\n  project_id = projectMatch[0].toUpperCase();\n}\n\n// Casual conversation\nconst casualGreetings = [\n  \"hello\",\n  \"hi\",\n  \"hey\",\n  \"good morning\",\n  \"good afternoon\",\n  \"good evening\",\n  \"how are you\",\n  \"thanks\",\n  \"thank you\"\n];\n\nif (\n  casualGreetings.includes(question) ||\n  question.startsWith(\"hello \") ||\n  question.startsWith(\"hi \") ||\n  question.startsWith(\"hey \")\n) {\n  intent = \"CASUAL_CONVERSATION\";\n}\n\n// Portfolio summary\nelse if (\n  question.includes(\"executive portfolio summary\") ||\n  question.includes(\"portfolio summary\") ||\n  question.includes(\"executive summary\") ||\n  question.includes(\"portfolio health\")\n) {\n  intent = \"PORTFOLIO_SUMMARY\";\n}\n\n// Project deep dive\nelse if (\n  project_id &&\n  (\n    question.includes(\"deep dive\") ||\n    question.includes(\"project status\") ||\n    question.includes(\"tell me about\") ||\n    question.includes(\"summary\") ||\n    question.includes(\"health\")\n  )\n) {\n  intent = \"PROJECT_DEEP_DIVE\";\n}\n\n// Risk queries\nelse if (\n  question.includes(\"risk\") ||\n  question.includes(\"risks\")\n) {\n  intent = project_id\n    ? \"PROJECT_RISK_QUERY\"\n    : \"PORTFOLIO_RISK_QUERY\";\n}\n\n// Issue queries\nelse if (\n  question.includes(\"issue\") ||\n  question.includes(\"issues\")\n) {\n  intent = project_id\n    ? \"PROJECT_ISSUE_QUERY\"\n    : \"PORTFOLIO_ISSUE_QUERY\";\n}\n\n// Action queries\nelse if (\n  question.includes(\"action\") ||\n  question.includes(\"actions\") ||\n  question.includes(\"overdue\")\n) {\n  intent = project_id\n    ? \"PROJECT_ACTION_QUERY\"\n    : \"PORTFOLIO_ACTION_QUERY\";\n}\n\n// Milestone queries\nelse if (\n  question.includes(\"milestone\") ||\n  question.includes(\"milestones\") ||\n  question.includes(\"schedule\") ||\n  question.includes(\"delayed\")\n) {\n  intent = project_id\n    ? \"PROJECT_MILESTONE_QUERY\"\n    : \"PORTFOLIO_MILESTONE_QUERY\";\n}\n\n// Governance queries\nelse if (\n  question.includes(\"governance\") ||\n  question.includes(\"exception\") ||\n  question.includes(\"exceptions\") ||\n  question.includes(\"contradiction\")\n) {\n  intent = project_id\n    ? \"PROJECT_GOVERNANCE_QUERY\"\n    : \"PORTFOLIO_GOVERNANCE_QUERY\";\n}\n\n// Any other project-specific question\nelse if (project_id) {\n  intent = \"PROJECT_DEEP_DIVE\";\n}\n\nreturn [\n  {\n    json: {\n      ...input,\n      query_context: {\n        original_question: originalQuestion,\n        intent,\n        project_id\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -496,
+        0
+      ],
+      "id": "de6d3476-934f-4e9f-a2ce-92adf8d2b9a5",
+      "name": "Classify User Intent"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "15bb290d-67f7-4fc2-b1eb-6785ec6c0d75",
+              "leftValue": "={{ $json.query_context.intent }}",
+              "rightValue": "CASUAL_CONVERSATION",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -336,
+        0
+      ],
+      "id": "52252e24-2c3f-4f2f-be2b-bbe3785c65f3",
+      "name": "If"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Get Projects": {
+      "main": [
+        [
+          {
+            "node": "Merge Portfolio Data",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Get Dependencies": {
+      "main": [
+        [
+          {
+            "node": "Merge Portfolio Data",
+            "type": "main",
+            "index": 5
+          }
+        ]
+      ]
+    },
+    "Get Milestones": {
+      "main": [
+        [
+          {
+            "node": "Merge Portfolio Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Actions": {
+      "main": [
+        [
+          {
+            "node": "Merge Portfolio Data",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Get Risks": {
+      "main": [
+        [
+          {
+            "node": "Merge Portfolio Data",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Get Issues": {
+      "main": [
+        [
+          {
+            "node": "Merge Portfolio Data",
+            "type": "main",
+            "index": 4
+          }
+        ]
+      ]
+    },
+    "Merge Portfolio Data": {
+      "main": [
+        [
+          {
+            "node": "Build Portfolio Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Portfolio Context": {
+      "main": [
+        [
+          {
+            "node": "Detect Governance Exceptions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detect Governance Exceptions": {
+      "main": [
+        [
+          {
+            "node": "AI PMO Intelligence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI PMO Response": {
+      "main": [
+        [
+          {
+            "node": "Build Executive Briefing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Executive Briefing": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI PMO Intelligence": {
+      "main": [
+        [
+          {
+            "node": "Parse AI PMO Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "User Question",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "User Question": {
+      "main": [
+        [
+          {
+            "node": "Classify User Intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify User Intent": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Milestones",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Actions",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Projects",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Risks",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Issues",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Dependencies",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "3ebda03a-adc0-48d4-966d-7a2f50b18a63",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ca19ab3d3cdf09f7e55378e9791459a0df6a3c73f10d678dcea7dbd2b88e0b7a"
+  },
+  "nodeGroups": [],
+  "id": "yBNmgNQYt5P9hI6j",
+  "tags": []
+}
