@@ -73,7 +73,22 @@ The solution provides the following business benefits:
 
 ---
 
-## 5. Workflow Diagram
+## 5. Solution Architecture
+
+![Project 02 – AI RAID Log Automation Architecture](images/architecture.png)
+
+The architecture separates the solution into four layers:
+
+1. **Input Sources** – project updates are currently supplied through a manual test input, with Teams, Gmail, SharePoint, status reports, and meeting minutes identified as future ingestion sources.
+2. **Automation Workflow** – n8n orchestrates OpenAI RAID extraction, JSON parsing, category splitting, deterministic scoring, duplicate-key generation, record upserts, escalation checks, and alert suppression.
+3. **Outputs and Governance** – Google Sheets stores the RAID registers and Alert Log, while Gmail sends High/Critical risk notifications. IDs, review dates, scores, ratings, alert history, and deduplication provide the governance controls.
+4. **Foundational Components** – OpenAI, n8n, Google Sheets API, Gmail API, and Docker provide the underlying automation stack.
+
+The architecture combines AI interpretation with deterministic workflow controls so that model output is validated and governed before it becomes an operational RAID record or escalation.
+
+---
+
+## 6. Workflow Diagram
 
 ![AI RAID Log Automation Workflow](images/workflow.png)
 
@@ -96,7 +111,7 @@ Parse RAID JSON
 
 ---
 
-## 6. Technology Stack
+## 7. Technology Stack
 
 - n8n
 - OpenAI GPT-5 Mini
@@ -109,7 +124,7 @@ Parse RAID JSON
 
 ---
 
-## 7. Sample Project Update
+## 8. Sample Project Update
 
 The workflow currently uses a manual sample input for testing.
 
@@ -138,7 +153,7 @@ The sample update contains:
 
 ---
 
-## 8. AI RAID Extraction
+## 9. AI RAID Extraction
 
 The AI Agent analyzes the project update and returns structured JSON.
 
@@ -196,7 +211,7 @@ The expected output structure is:
 
 ---
 
-## 9. JSON Parsing
+## 10. JSON Parsing
 
 The AI response is returned as a JSON string and must be converted into structured workflow data.
 
@@ -223,17 +238,15 @@ dependencies
 
 ---
 
-## 10. Risk Processing
+## 11. Risk Processing
 
-### 10.1 Split Risk
+### 11.1 Split Risk
 
 The Risk branch separates each extracted risk into an individual workflow item.
 
 ![Split Risk](images/risks/split-risk.png)
 
----
-
-### 10.2 Generate Risk ID, Score, Rating and Key
+### 11.2 Generate Risk ID, Score, Rating and Key
 
 The workflow generates a unique Risk ID using:
 
@@ -249,27 +262,15 @@ Example:
 RSK-20260730141604-01
 ```
 
-The item index prevents ID collisions when multiple risks are processed during the same second.
+The same node also calculates Risk Score, Risk Rating, and Risk Key.
 
-The same node also calculates:
-
-- Risk Score
-- Risk Rating
-- Risk Key
-
----
-
-### 10.3 Risk Scoring
-
-Probability and Impact are converted into numeric values.
+### 11.3 Risk Scoring
 
 | Rating | Numeric Value |
 |---|---:|
 | Low | 1 |
 | Medium | 2 |
 | High | 3 |
-
-The calculation is:
 
 ```text
 Risk Score = Probability × Impact
@@ -280,15 +281,10 @@ Example:
 ```text
 Probability = Medium = 2
 Impact = High = 3
-
 Risk Score = 2 × 3 = 6
 ```
 
----
-
-### 10.4 Risk Rating Matrix
-
-The numeric score is converted into a final Risk Rating.
+### 11.4 Risk Rating Matrix
 
 | Risk Score | Risk Rating |
 |---:|---|
@@ -297,40 +293,11 @@ The numeric score is converted into a final Risk Rating.
 | 6 | High |
 | 9 | Critical |
 
-Example:
+The final Risk Rating is calculated by deterministic workflow logic rather than relying only on the AI-generated priority.
 
-```text
-Probability: Medium
-Impact: High
-Risk Score: 6
-Risk Rating: High
-```
+### 11.5 Duplicate Detection
 
-The workflow calculates the final rating instead of depending only on the AI-generated priority. This makes the process more consistent and auditable.
-
----
-
-### 10.5 Duplicate Detection
-
-Generated IDs cannot be used for duplicate detection because they change during every execution.
-
-The workflow therefore creates a stable Risk Key using:
-
-```text
-Project ID + normalized risk description
-```
-
-Example:
-
-```text
-prj-001-vendor-production-server-delivery-delay
-```
-
-The normalization process:
-
-- Converts text to lowercase
-- Removes special characters
-- Replaces spaces with hyphens
+Generated IDs change on each execution, so they are not used for duplicate detection. The workflow instead creates a stable Risk Key from the Project ID and normalized risk content.
 
 The Google Sheets operation is configured as:
 
@@ -338,23 +305,12 @@ The Google Sheets operation is configured as:
 Append or Update Row
 ```
 
-Workflow behavior:
-
 ```text
-Risk Key exists
-→ Update the existing row
+Risk Key exists → Update the existing row
+Risk Key does not exist → Append a new row
 ```
 
-```text
-Risk Key does not exist
-→ Append a new row
-```
-
----
-
-### 10.6 Generate Risk Alert Key
-
-The workflow creates a separate key for notification control.
+### 11.6 Generate Risk Alert Key
 
 ![Generate Risk Alert Key](images/risks/generate-risk-alert-key.png)
 
@@ -364,73 +320,24 @@ The Alert Key combines:
 Risk Key + Risk Rating
 ```
 
-Example:
+This supports alert suppression while still allowing a new notification if the risk rating changes.
 
-```text
-prj-001-vendor-production-server-delivery-delay-high
-```
-
-This allows the workflow to suppress repeated alerts while still sending a new notification if the risk rating changes.
-
----
-
-### 10.7 Upsert Risk Record
-
-The risk is written to the centralized RAID register.
+### 11.7 Upsert Risk Record
 
 ![Upsert Risk Record](images/risks/upsert-risk-record.png)
 
-The Risks sheet contains:
+The Risks sheet stores the risk ID, key, project information, title, description, probability, impact, score, rating, owner, mitigation, status, and review dates.
 
-```text
-Risk ID
-Risk Key
-Project ID
-Project
-Risk Title
-Risk Description
-Probability
-Impact
-Risk Score
-Risk Rating
-Risk Owner
-Mitigation
-Status
-Last Review Date
-Next Review Date
-Created Date
-Last Updated
-```
-
----
-
-### 10.8 Review Date Automation
-
-The workflow automatically generates review dates.
+### 11.8 Review Date Automation
 
 ```text
 Last Review Date = Current Date
 Next Review Date = Current Date + 7 Days
 ```
 
-Example:
-
-```text
-Last Review Date: 2026-07-30
-Next Review Date: 2026-08-06
-```
-
-This creates a consistent weekly governance review cycle.
-
----
-
-### 10.9 High and Critical Risk Check
-
-Only High and Critical risks generate immediate alerts.
+### 11.9 High and Critical Risk Check
 
 ![Check High or Critical Risk](images/risks/check-high-critical-risk.png)
-
-The condition is:
 
 ```text
 Risk Rating = High
@@ -438,83 +345,32 @@ OR
 Risk Rating = Critical
 ```
 
-Low and Medium risks are still recorded in the RAID register but do not trigger an immediate email.
-
----
-
-### 10.10 Search Alert Log
-
-Before sending an email, the workflow searches the Alert Log using the generated Alert Key.
+### 11.10 Search Alert Log
 
 ![Search Alert Log](images/risks/search-alert-log.png)
 
-If the key already exists, the alert was previously sent.
+Before sending an email, the workflow searches the Alert Log for the generated Alert Key.
 
-If the key does not exist, the workflow continues to the email step.
-
----
-
-### 10.11 Check if Alert Was Already Sent
+### 11.11 Check if Alert Was Already Sent
 
 ![Check Alert Already Sent](images/risks/check-alert-already-sent.png)
 
-The condition checks whether the returned Alert Key is empty.
-
 ```text
-Alert Key is empty
-→ True
-→ Send email
+Alert Key is empty → Send email
+Alert Key exists → Stop notification path
 ```
 
-```text
-Alert Key exists
-→ False
-→ Stop notification path
-```
-
-This prevents repeated notifications for the same unchanged risk.
-
----
-
-### 10.12 Send Risk Alert Email
-
-When a new High or Critical risk is identified, the workflow sends an email through Gmail.
+### 11.12 Send Risk Alert Email
 
 ![Send Risk Alert Email](images/risks/send-risk-alert-email.png)
 
-Example subject:
+The email includes the project, risk ID, title, description, probability, impact, score, rating, owner, mitigation, status, and next review date.
 
-```text
-[RAID Alert] High Risk – Production server delivery delay
-```
-
-The email contains:
-
-```text
-Project ID
-Project
-Risk ID
-Risk Title
-Risk Description
-Probability
-Impact
-Risk Score
-Risk Rating
-Risk Owner
-Mitigation
-Status
-Next Review Date
-```
-
----
-
-### 10.13 Log Risk Alert
-
-After the email is successfully sent, the workflow records the notification in the Alert Log.
+### 11.13 Log Risk Alert
 
 ![Log Risk Alert](images/risks/log-risk-alert.png)
 
-The Alert Log contains:
+The Alert Log stores:
 
 ```text
 Alert Key
@@ -527,168 +383,83 @@ Alert Date
 Recipient
 ```
 
-This provides an audit trail and supports duplicate alert suppression.
-
 ---
 
-## 11. Assumption Processing
+## 12. Assumption Processing
 
-### 11.1 Split Assumptions
-
-The workflow separates each assumption into an individual item.
+### 12.1 Split Assumptions
 
 ![Split Assumptions](images/assumptions/split-assumptions.png)
 
----
-
-### 11.2 Generate Assumption ID and Key
-
-The workflow generates a unique Assumption ID and duplicate-detection key.
+### 12.2 Generate Assumption ID and Key
 
 ![Generate Assumption Key](images/assumptions/generate-assumption-key.png)
 
-Example Assumption ID:
+Example:
 
 ```text
 ASM-20260730140402-01
 ```
 
-The Assumption Key is used to identify and update duplicate assumption records.
-
----
-
-### 11.3 Upsert Assumption Record
-
-The workflow appends a new assumption or updates an existing assumption in Google Sheets.
+### 12.3 Upsert Assumption Record
 
 ![Upsert Assumption Record](images/assumptions/upsert-assumption-record.png)
 
-The Assumptions sheet contains:
-
-```text
-Assumption ID
-Assumption Key
-Project ID
-Project
-Assumption Title
-Assumption Description
-Owner
-Due Date
-Status
-Created Date
-Last Updated
-Last Review Date
-Next Review Date
-```
+The Assumptions sheet stores the Assumption ID, duplicate key, Project ID, title, description, owner, due date, status, review dates, and audit dates.
 
 ---
 
-## 12. Issue Processing
+## 13. Issue Processing
 
-### 12.1 Split Issues
-
-The workflow separates each issue into an individual item.
+### 13.1 Split Issues
 
 ![Split Issues](images/issues/split-issues.png)
 
----
-
-### 12.2 Generate Issue ID and Key
-
-The workflow generates a unique Issue ID and duplicate-detection key.
+### 13.2 Generate Issue ID and Key
 
 ![Generate Issue Key](images/issues/generate-issue-key.png)
 
-Example Issue ID:
+Example:
 
 ```text
 ISS-20260730140405-01
 ```
 
-The Issue Key supports duplicate detection and record updates.
-
----
-
-### 12.3 Upsert Issue Record
-
-The workflow appends a new issue or updates an existing issue.
+### 13.3 Upsert Issue Record
 
 ![Upsert Issue Record](images/issues/upsert-issue-record.png)
 
-The Issues sheet contains:
-
-```text
-Issue ID
-Issue Key
-Project ID
-Project
-Issue Title
-Issue Description
-Owner
-Status
-Resolution
-Severity
-Created Date
-Last Updated
-```
+The Issues sheet stores the Issue ID, duplicate key, Project ID, title, description, owner, status, resolution, severity, and audit dates.
 
 ---
 
-## 13. Dependency Processing
+## 14. Dependency Processing
 
-### 13.1 Split Dependencies
-
-The workflow separates each dependency into an individual item.
+### 14.1 Split Dependencies
 
 ![Split Dependencies](images/dependencies/split-dependencies.png)
 
----
-
-### 13.2 Generate Dependency ID and Key
-
-The workflow generates a unique Dependency ID and duplicate-detection key.
+### 14.2 Generate Dependency ID and Key
 
 ![Generate Dependency Key](images/dependencies/generate-dependency-key.png)
 
-Example Dependency ID:
+Example:
 
 ```text
 DEP-20260730140407-01
 ```
 
-The Dependency Key supports duplicate detection and record updates.
-
----
-
-### 13.3 Upsert Dependency Record
-
-The workflow appends a new dependency or updates an existing dependency.
+### 14.3 Upsert Dependency Record
 
 ![Upsert Dependency Record](images/dependencies/upsert-dependency-record.png)
 
-The Dependencies sheet contains:
-
-```text
-Dependency ID
-Dependency Key
-Project ID
-Project
-Dependency Title
-Dependency Description
-Owner
-Due Date
-Status
-Created Date
-Last Updated
-Last Review Date
-Next Review Date
-```
+The Dependencies sheet stores the Dependency ID, duplicate key, Project ID, title, description, owner, due date, status, review dates, and audit dates.
 
 ---
 
-## 14. Google Sheets Structure
+## 15. Google Sheets Structure
 
-The RAID workbook contains the following tabs:
+The RAID workbook contains:
 
 ```text
 Risks
@@ -698,33 +469,11 @@ Dependencies
 Alert Log
 ```
 
-### 14.1 Risks
-
-Stores risk information, probability, impact, score, rating, owner, mitigation, status, IDs, keys, and review dates.
-
-### 14.2 Assumptions
-
-Stores assumptions, owners, due dates, status, IDs, keys, and review dates.
-
-### 14.3 Issues
-
-Stores issues, severity, owners, resolutions, status, IDs, and keys.
-
-### 14.4 Dependencies
-
-Stores dependencies, owners, due dates, status, IDs, keys, and review dates.
-
-### 14.5 Alert Log
-
-Stores a history of sent risk alerts and prevents repeated notifications.
+The Alert Log provides the audit trail used to prevent repeated notifications.
 
 ---
 
-## 15. Alert Suppression Logic
-
-Sending an email every time the workflow executes would create repeated alerts.
-
-The workflow prevents this using the Alert Log.
+## 16. Alert Suppression Logic
 
 ```text
 High or Critical Risk
@@ -737,49 +486,27 @@ Alert Key Found?
 ```
 
 ```text
-No
-→ Send email
-→ Log alert
+No → Send email → Log alert
+Yes → Do not send another email
 ```
 
-```text
-Yes
-→ Do not send another email
-```
-
-If the risk rating changes, a new Alert Key is generated.
-
-Example:
-
-```text
-prj-001-server-delivery-delay-high
-```
-
-can later become:
-
-```text
-prj-001-server-delivery-delay-critical
-```
-
-A new email is then allowed because the risk has escalated.
+If the risk rating changes, a new Alert Key is generated and a new escalation can be sent.
 
 ---
 
-## 16. Workflow Testing
+## 17. Workflow Testing
 
-The workflow was tested using the same project update across multiple executions.
-
-### 16.1 First Execution
+### 17.1 First Execution
 
 Expected results:
 
 - RAID records created
 - Risk Score calculated
 - Risk Rating calculated
-- High or Critical risk email sent
+- High/Critical risk email sent
 - Alert Log record created
 
-### 16.2 Second Execution
+### 17.2 Second Execution
 
 Expected results:
 
@@ -789,53 +516,27 @@ Expected results:
 - No duplicate email sent
 - No duplicate Alert Log row created
 
-The test confirmed that record deduplication and alert suppression work correctly.
+The repeat-execution test confirmed both record deduplication and alert suppression.
 
 ---
 
-## 17. Repository Structure
+## 18. Repository Structure
 
 ```text
 Project-02-AI-RAID-Log-Automation/
 │
 ├── README.md
-│
 ├── workflow/
 │   └── project-02-ai-raid-log-automation.json
 │
 ├── images/
+│   ├── architecture.png
 │   ├── workflow.png
-│   │
 │   ├── setup/
-│   │   ├── sample-project-update.png
-│   │   ├── ai-agent-extract-raid.png
-│   │   └── parse-raid-json.png
-│   │
 │   ├── risks/
-│   │   ├── split-risk.png
-│   │   ├── generate-risk-id.png
-│   │   ├── generate-risk-alert-key.png
-│   │   ├── upsert-risk-record.png
-│   │   ├── check-high-critical-risk.png
-│   │   ├── search-alert-log.png
-│   │   ├── check-alert-already-sent.png
-│   │   ├── send-risk-alert-email.png
-│   │   └── log-risk-alert.png
-│   │
 │   ├── assumptions/
-│   │   ├── split-assumptions.png
-│   │   ├── generate-assumption-key.png
-│   │   └── upsert-assumption-record.png
-│   │
 │   ├── issues/
-│   │   ├── split-issues.png
-│   │   ├── generate-issue-key.png
-│   │   └── upsert-issue-record.png
-│   │
 │   └── dependencies/
-│       ├── split-dependencies.png
-│       ├── generate-dependency-key.png
-│       └── upsert-dependency-record.png
 │
 ├── prompts/
 │   └── raid-extraction-prompt.txt
@@ -847,7 +548,7 @@ Project-02-AI-RAID-Log-Automation/
 
 ---
 
-## 18. Key Skills Demonstrated
+## 19. Key Skills Demonstrated
 
 - AI workflow automation
 - PMO governance
@@ -867,20 +568,18 @@ Project-02-AI-RAID-Log-Automation/
 
 ---
 
-## 19. Current Limitations
+## 20. Current Limitations
 
 - The workflow currently uses a Manual Trigger
 - AI classification may still require human validation
-- Owners remain blank when they are not specified in the source
-- Only High and Critical risks currently trigger emails
+- Owners remain blank when not specified in the source
+- Only High and Critical risks currently trigger email alerts
 - Duplicate detection depends on normalized text keys
 - Google Sheets is suitable for a prototype but not a high-volume enterprise implementation
 
 ---
 
-## 20. Future Improvements
-
-Potential future enhancements include:
+## 21. Future Improvements
 
 - Microsoft Teams transcript ingestion
 - Gmail project-update ingestion
@@ -900,7 +599,7 @@ Potential future enhancements include:
 
 ---
 
-## 21. Lessons Learned
+## 22. Lessons Learned
 
 This project demonstrated that AI extraction alone is not enough for a reliable PMO automation solution.
 
@@ -920,7 +619,7 @@ The project combines AI interpretation with deterministic business rules to crea
 
 ---
 
-## 22. Conclusion
+## 23. Conclusion
 
 The AI RAID Log Automation workflow converts raw project updates into structured and governed RAID records.
 
@@ -935,4 +634,4 @@ AI Extraction
 + Alert Suppression
 ```
 
-The result is a practical PMO automation solution that improves consistency, visibility, accountability, and response time across project delivery.
+The result is a practical PMO automation prototype that demonstrates structured AI extraction, deterministic controls, deduplication, escalation logic, and auditable alert handling.
