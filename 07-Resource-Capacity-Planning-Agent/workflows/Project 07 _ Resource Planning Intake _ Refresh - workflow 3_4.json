@@ -1,0 +1,396 @@
+{
+  "name": "Project 07 | Resource Planning Intake / Refresh - workflow 3/4",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -144,
+        0
+      ],
+      "id": "bf48af7e-4776-425c-bdbb-0fa128b3a839",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json;\n\nconst errors = [];\n\nconst validPriorities = ['Critical', 'High', 'Medium', 'Low'];\n\nfunction isValidDate(value) {\n  return /^\\d{4}-\\d{2}-\\d{2}$/.test(value || '');\n}\n\nfunction isMonday(dateString) {\n  const d = new Date(`${dateString}T00:00:00Z`);\n  return d.getUTCDay() === 1;\n}\n\nfunction isNonNegativeNumber(value) {\n  return typeof value === 'number' &&\n         Number.isFinite(value) &&\n         value >= 0;\n}\n\n// --------------------\n// Project validation\n// --------------------\nif (!input.project) {\n  errors.push('project object is required');\n} else {\n  if (!/^PRJ-\\d{3}$/.test(input.project.project_id || '')) {\n    errors.push('project.project_id must follow PRJ-###');\n  }\n\n  if (!input.project.project_name) {\n    errors.push('project.project_name is required');\n  }\n\n  if (!validPriorities.includes(input.project.priority)) {\n    errors.push('project.priority must be Critical, High, Medium or Low');\n  }\n\n  if (!isValidDate(input.project.start_date)) {\n    errors.push('project.start_date must use YYYY-MM-DD');\n  }\n\n  if (!isValidDate(input.project.end_date)) {\n    errors.push('project.end_date must use YYYY-MM-DD');\n  }\n\n  if (\n    isValidDate(input.project.start_date) &&\n    isValidDate(input.project.end_date) &&\n    input.project.end_date < input.project.start_date\n  ) {\n    errors.push('project.end_date cannot be before start_date');\n  }\n}\n\n// --------------------\n// Resource validation\n// --------------------\nif (!input.resource) {\n  errors.push('resource object is required');\n} else {\n  if (!/^RES-\\d{3}$/.test(input.resource.resource_id || '')) {\n    errors.push('resource.resource_id must follow RES-###');\n  }\n\n  if (!input.resource.resource_name) {\n    errors.push('resource.resource_name is required');\n  }\n\n  if (!input.resource.role) {\n    errors.push('resource.role is required');\n  }\n\n  if (!input.resource.department) {\n    errors.push('resource.department is required');\n  }\n\n  if (!isNonNegativeNumber(input.resource.standard_weekly_hours)) {\n    errors.push(\n      'resource.standard_weekly_hours must be a non-negative number'\n    );\n  }\n}\n\n// --------------------\n// Capacity validation\n// --------------------\nif (!input.capacity) {\n  errors.push('capacity object is required');\n} else {\n  if (!isValidDate(input.capacity.week_start_date)) {\n    errors.push('capacity.week_start_date must use YYYY-MM-DD');\n  } else if (!isMonday(input.capacity.week_start_date)) {\n    errors.push('capacity.week_start_date must be a Monday');\n  }\n\n  const capacityFields = [\n    'standard_hours',\n    'leave_hours',\n    'holiday_hours',\n    'training_hours',\n    'bau_hours'\n  ];\n\n  for (const field of capacityFields) {\n    if (!isNonNegativeNumber(input.capacity[field])) {\n      errors.push(`capacity.${field} must be a non-negative number`);\n    }\n  }\n}\n\n// --------------------\n// Demand validation\n// --------------------\nif (!Array.isArray(input.demand) || input.demand.length === 0) {\n  errors.push('demand must contain at least one activity');\n} else {\n  input.demand.forEach((d, index) => {\n    if (!/^PRJ-\\d{3}$/.test(d.project_id || '')) {\n      errors.push(`demand[${index}].project_id must follow PRJ-###`);\n    }\n\n    if (!d.activity_name) {\n      errors.push(`demand[${index}].activity_name is required`);\n    }\n\n    if (!isNonNegativeNumber(d.planned_hours)) {\n      errors.push(\n        `demand[${index}].planned_hours must be a non-negative number`\n      );\n    }\n\n    if (!validPriorities.includes(d.priority)) {\n      errors.push(\n        `demand[${index}].priority must be Critical, High, Medium or Low`\n      );\n    }\n\n    if (typeof d.critical_path !== 'boolean') {\n      errors.push(\n        `demand[${index}].critical_path must be true or false`\n      );\n    }\n  });\n}\n\n// --------------------\n// Final result\n// --------------------\nif (errors.length > 0) {\n  return {\n    json: {\n      validation_status: 'FAILED',\n      valid: false,\n      error_count: errors.length,\n      errors,\n      original_payload: input\n    }\n  };\n}\n\nreturn {\n  json: {\n    validation_status: 'PASSED',\n    valid: true,\n    error_count: 0,\n    errors: [],\n    payload: input\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        320,
+        0
+      ],
+      "id": "372bf48d-165c-445a-9ed2-d70762053acc",
+      "name": "Validate Intake Payload"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "{\n  \"project\": {\n    \"project_id\": \"PRJ-005\",\n    \"project_name\": \"Cloud Migration Program\",\n    \"priority\": \"High\",\n    \"status\": \"Active\",\n    \"start_date\": \"2025-08-01\",\n    \"end_date\": \"2025-12-31\"\n  },\n  \"resource\": {\n    \"resource_id\": \"RES-007\",\n    \"resource_name\": \"Cloud Architect A\",\n    \"role\": \"Cloud Architect\",\n    \"department\": \"Architecture\",\n    \"standard_weekly_hours\": 40,\n    \"active\": true\n  },\n  \"capacity\": {\n    \"week_start_date\": \"2025-08-18\",\n    \"standard_hours\": 40,\n    \"leave_hours\": 0,\n    \"holiday_hours\": 0,\n    \"training_hours\": 4,\n    \"bau_hours\": 4\n  },\n  \"demand\": [\n    {\n      \"project_id\": \"PRJ-005\",\n      \"activity_name\": \"Cloud Architecture Design\",\n      \"planned_hours\": 24,\n      \"priority\": \"High\",\n      \"critical_path\": true\n    },\n    {\n      \"project_id\": \"PRJ-001\",\n      \"activity_name\": \"ERP Integration Review\",\n      \"planned_hours\": 16,\n      \"priority\": \"Critical\",\n      \"critical_path\": false\n    }\n  ]\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        80,
+        0
+      ],
+      "id": "45dd2f6c-01a9-46af-813d-30142fd06c72",
+      "name": "Set Test Intake Payload"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b2d97671-3fc2-48aa-a493-3092a464ce6b",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": "True",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        544,
+        0
+      ],
+      "id": "2f00b966-5105-42f8-aa4d-df273a397ee6",
+      "name": "Validation Passed?"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const payload = $json.payload;\n\n// Normalize project\nconst project = {\n  project_id: payload.project.project_id.trim().toUpperCase(),\n  project_name: payload.project.project_name.trim(),\n  priority: payload.project.priority,\n  status: payload.project.status || 'Active',\n  start_date: payload.project.start_date,\n  end_date: payload.project.end_date\n};\n\n// Normalize resource\nconst resource = {\n  resource_id: payload.resource.resource_id.trim().toUpperCase(),\n  resource_name: payload.resource.resource_name.trim(),\n  role: payload.resource.role.trim(),\n  department: payload.resource.department.trim(),\n  standard_weekly_hours: Number(payload.resource.standard_weekly_hours),\n  active: payload.resource.active !== false\n};\n\n// Normalize capacity\nconst capacity = {\n  resource_id: resource.resource_id,\n  week_start_date: payload.capacity.week_start_date,\n  standard_hours: Number(payload.capacity.standard_hours),\n  leave_hours: Number(payload.capacity.leave_hours || 0),\n  holiday_hours: Number(payload.capacity.holiday_hours || 0),\n  training_hours: Number(payload.capacity.training_hours || 0),\n  bau_hours: Number(payload.capacity.bau_hours || 0)\n};\n\n// Normalize demand\nconst demand = payload.demand.map((d, index) => ({\n  demand_sequence: index + 1,\n  resource_id: resource.resource_id,\n  project_id: d.project_id.trim().toUpperCase(),\n  week_start_date: payload.capacity.week_start_date,\n  activity_name: d.activity_name.trim(),\n  planned_hours: Number(d.planned_hours),\n  priority: d.priority,\n  critical_path: Boolean(d.critical_path)\n}));\n\nreturn {\n  json: {\n    intake_status: 'NORMALIZED',\n    project,\n    resource,\n    capacity,\n    demand,\n    demand_count: demand.length\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        768,
+        -96
+      ],
+      "id": "9c47aa0a-7613-4295-911f-06fd25e49064",
+      "name": "Normalize Planning Data"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO projects (\n    project_id,\n    project_name,\n    priority,\n    status,\n    start_date,\n    end_date\n)\nVALUES (\n    $1,$2,$3,$4,$5,$6\n)\nON CONFLICT (project_id)\nDO UPDATE SET\n    project_name = EXCLUDED.project_name,\n    priority = EXCLUDED.priority,\n    status = EXCLUDED.status,\n    start_date = EXCLUDED.start_date,\n    end_date = EXCLUDED.end_date\nRETURNING *;",
+        "options": {
+          "queryReplacement": "={{ [   $json.project.project_id,   $json.project.project_name,   $json.project.priority,   $json.project.status,   $json.project.start_date,   $json.project.end_date ] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        992,
+        -96
+      ],
+      "id": "9a4b4685-8c41-4323-9365-67840c35fedf",
+      "name": "Upsert Project",
+      "credentials": {
+        "postgres": {
+          "id": "nt4wxwkKIfBcVIkX",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO resources (\n    resource_id,\n    resource_name,\n    role,\n    department,\n    standard_weekly_hours,\n    active\n)\nVALUES (\n    $1,$2,$3,$4,$5,$6\n)\nON CONFLICT (resource_id)\nDO UPDATE SET\n    resource_name = EXCLUDED.resource_name,\n    role = EXCLUDED.role,\n    department = EXCLUDED.department,\n    standard_weekly_hours = EXCLUDED.standard_weekly_hours,\n    active = EXCLUDED.active\nRETURNING *;",
+        "options": {
+          "queryReplacement": "={{ [   $node[\"Normalize Planning Data\"].json.resource.resource_id,   $node[\"Normalize Planning Data\"].json.resource.resource_name,   $node[\"Normalize Planning Data\"].json.resource.role,   $node[\"Normalize Planning Data\"].json.resource.department,   $node[\"Normalize Planning Data\"].json.resource.standard_weekly_hours,   $node[\"Normalize Planning Data\"].json.resource.active ] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        1216,
+        -96
+      ],
+      "id": "17672b29-5a56-4f51-a2fd-b1fc3c9ef07f",
+      "name": "Upsert Resource",
+      "credentials": {
+        "postgres": {
+          "id": "nt4wxwkKIfBcVIkX",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO resource_capacity (\n    resource_id,\n    week_start_date,\n    standard_hours,\n    leave_hours,\n    holiday_hours,\n    training_hours,\n    bau_hours\n)\nVALUES (\n    $1,$2,$3,$4,$5,$6,$7\n)\nON CONFLICT (resource_id, week_start_date)\nDO UPDATE SET\n    standard_hours = EXCLUDED.standard_hours,\n    leave_hours = EXCLUDED.leave_hours,\n    holiday_hours = EXCLUDED.holiday_hours,\n    training_hours = EXCLUDED.training_hours,\n    bau_hours = EXCLUDED.bau_hours\nRETURNING *;",
+        "options": {
+          "queryReplacement": "={{ [   $node[\"Normalize Planning Data\"].json.capacity.resource_id,   $node[\"Normalize Planning Data\"].json.capacity.week_start_date,   $node[\"Normalize Planning Data\"].json.capacity.standard_hours,   $node[\"Normalize Planning Data\"].json.capacity.leave_hours,   $node[\"Normalize Planning Data\"].json.capacity.holiday_hours,   $node[\"Normalize Planning Data\"].json.capacity.training_hours,   $node[\"Normalize Planning Data\"].json.capacity.bau_hours ] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        1440,
+        -96
+      ],
+      "id": "777478b0-0649-4b6a-a117-63726b10c40b",
+      "name": "Upsert Resource Capacity",
+      "credentials": {
+        "postgres": {
+          "id": "nt4wxwkKIfBcVIkX",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const normalized =\n  $node[\"Normalize Planning Data\"].json;\n\nreturn normalized.demand.map(d => ({\n  json: {\n    resource_id: d.resource_id,\n    project_id: d.project_id,\n    week_start_date: d.week_start_date,\n    activity_name: d.activity_name,\n    planned_hours: d.planned_hours,\n    priority: d.priority,\n    critical_path: d.critical_path\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1664,
+        -96
+      ],
+      "id": "de84da6a-8f55-4aca-84b6-399b3554ba46",
+      "name": "Prepare Resource Demand Records"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO resource_demand (\n    resource_id,\n    project_id,\n    week_start_date,\n    activity_name,\n    planned_hours,\n    activity_priority,\n    critical_path\n)\nVALUES (\n    $1,$2,$3,$4,$5,$6,$7\n)\nON CONFLICT (\n    resource_id,\n    project_id,\n    week_start_date,\n    activity_name\n)\nDO UPDATE SET\n    planned_hours = EXCLUDED.planned_hours,\n    activity_priority = EXCLUDED.activity_priority,\n    critical_path = EXCLUDED.critical_path,\n    updated_at = CURRENT_TIMESTAMP\nRETURNING *;",
+        "options": {
+          "queryReplacement": "={{ [\n  $json.resource_id,\n  $json.project_id,\n  $json.week_start_date,\n  $json.activity_name,\n  $json.planned_hours,\n  $json.priority,\n  $json.critical_path\n] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        1888,
+        -96
+      ],
+      "id": "b57c3bbc-1ffa-43f0-8828-df365d45830a",
+      "name": "Upsert Resource Demand",
+      "credentials": {
+        "postgres": {
+          "id": "nt4wxwkKIfBcVIkX",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH utilization AS (\n    SELECT\n        rc.resource_id,\n        rc.week_start_date,\n        rc.available_hours,\n        COALESCE(SUM(rd.planned_hours), 0) AS demand_hours,\n\n        ROUND(\n            CASE\n                WHEN rc.available_hours > 0\n                THEN (\n                    COALESCE(SUM(rd.planned_hours), 0)\n                    / rc.available_hours\n                ) * 100\n                ELSE 0\n            END,\n            2\n        ) AS utilization_pct,\n\n        GREATEST(\n            COALESCE(SUM(rd.planned_hours), 0)\n            - rc.available_hours,\n            0\n        ) AS overallocation_hours\n\n    FROM resource_capacity rc\n\n    LEFT JOIN resource_demand rd\n      ON rd.resource_id = rc.resource_id\n     AND rd.week_start_date = rc.week_start_date\n\n    WHERE rc.resource_id = $1\n      AND rc.week_start_date = $2\n\n    GROUP BY\n        rc.resource_id,\n        rc.week_start_date,\n        rc.available_hours\n),\n\nclassified AS (\n    SELECT\n        u.*,\n\n        CASE\n            WHEN u.utilization_pct >= 120 THEN 'Critical'\n            WHEN u.utilization_pct >= 100 THEN 'High'\n            WHEN u.utilization_pct >= 85 THEN 'Warning'\n            ELSE 'Normal'\n        END AS severity\n\n    FROM utilization u\n)\n\nINSERT INTO capacity_conflicts (\n    resource_id,\n    week_start_date,\n    conflict_type,\n    utilization_pct,\n    overallocation_hours,\n    severity,\n    status\n)\n\nSELECT\n    resource_id,\n    week_start_date,\n    'RESOURCE_OVERALLOCATION',\n    utilization_pct,\n    overallocation_hours,\n    severity,\n    'Open'\n\nFROM classified\n\nWHERE utilization_pct >= 100\n\nON CONFLICT (\n    resource_id,\n    week_start_date,\n    conflict_type\n)\n\nDO UPDATE SET\n    utilization_pct = EXCLUDED.utilization_pct,\n    overallocation_hours = EXCLUDED.overallocation_hours,\n    severity = EXCLUDED.severity,\n    status = 'Open'\n\nRETURNING *;",
+        "options": {
+          "queryReplacement": "={{ [\n  $json.resource_id,\n  $json.week_start_date\n] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        2336,
+        -96
+      ],
+      "id": "b9385dd5-ddee-4a70-b6bc-8ba4aab53b54",
+      "name": "Recalculate Capacity Conflicts",
+      "credentials": {
+        "postgres": {
+          "id": "nt4wxwkKIfBcVIkX",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    resource_id:\n      $items(\"Normalize Planning Data\")[0].json.resource.resource_id,\n\n    week_start_date:\n      $items(\"Normalize Planning Data\")[0].json.capacity.week_start_date\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2112,
+        -96
+      ],
+      "id": "e94143a9-8773-4db8-8b9f-5766425175ea",
+      "name": "Collapse Demand Results"
+    },
+    {
+      "parameters": {
+        "jsCode": "const normalized =\n  $items(\"Normalize Planning Data\")[0].json;\n\nconst conflictItems =\n  $items(\"Recalculate Capacity Conflicts\");\n\nconst conflict =\n  conflictItems.length > 0\n    ? conflictItems[0].json\n    : null;\n\nreturn [{\n  json: {\n    intake_status: 'COMPLETED',\n\n    project: {\n      project_id: normalized.project.project_id,\n      project_name: normalized.project.project_name\n    },\n\n    resource: {\n      resource_id: normalized.resource.resource_id,\n      resource_name: normalized.resource.resource_name,\n      role: normalized.resource.role,\n      department: normalized.resource.department\n    },\n\n    capacity: {\n      week_start_date: normalized.capacity.week_start_date,\n      standard_hours: normalized.capacity.standard_hours,\n      leave_hours: normalized.capacity.leave_hours,\n      holiday_hours: normalized.capacity.holiday_hours,\n      training_hours: normalized.capacity.training_hours,\n      bau_hours: normalized.capacity.bau_hours\n    },\n\n    demand: {\n      activities_processed: normalized.demand.length,\n      total_planned_hours: normalized.demand.reduce(\n        (sum, d) => sum + Number(d.planned_hours),\n        0\n      )\n    },\n\n    conflict_detected: conflict !== null,\n\n    conflict: conflict\n      ? {\n          conflict_id: conflict.conflict_id,\n          utilization_pct: Number(conflict.utilization_pct),\n          overallocation_hours: Number(conflict.overallocation_hours),\n          severity: conflict.severity,\n          status: conflict.status\n        }\n      : null\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2560,
+        -96
+      ],
+      "id": "2a5dcc75-c591-4219-be72-57a1f243d4f6",
+      "name": "Build Intake Result"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Set Test Intake Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Intake Payload": {
+      "main": [
+        [
+          {
+            "node": "Validation Passed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Test Intake Payload": {
+      "main": [
+        [
+          {
+            "node": "Validate Intake Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validation Passed?": {
+      "main": [
+        [
+          {
+            "node": "Normalize Planning Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Planning Data": {
+      "main": [
+        [
+          {
+            "node": "Upsert Project",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Project": {
+      "main": [
+        [
+          {
+            "node": "Upsert Resource",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Resource": {
+      "main": [
+        [
+          {
+            "node": "Upsert Resource Capacity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Resource Capacity": {
+      "main": [
+        [
+          {
+            "node": "Prepare Resource Demand Records",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Resource Demand Records": {
+      "main": [
+        [
+          {
+            "node": "Upsert Resource Demand",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Resource Demand": {
+      "main": [
+        [
+          {
+            "node": "Collapse Demand Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collapse Demand Results": {
+      "main": [
+        [
+          {
+            "node": "Recalculate Capacity Conflicts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recalculate Capacity Conflicts": {
+      "main": [
+        [
+          {
+            "node": "Build Intake Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "216f6ed1-9b1a-45ba-adc6-f430e3dd2c1d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ca19ab3d3cdf09f7e55378e9791459a0df6a3c73f10d678dcea7dbd2b88e0b7a"
+  },
+  "nodeGroups": [],
+  "id": "gqAKRFG6ul82ULrv",
+  "tags": []
+}
