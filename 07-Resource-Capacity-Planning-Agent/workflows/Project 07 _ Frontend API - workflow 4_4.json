@@ -1,0 +1,811 @@
+{
+  "name": "Project 07 | Frontend API - workflow 4/4",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH latest_week AS (\n    SELECT MAX(week_start_date) AS week_start_date\n    FROM public.vw_weekly_portfolio_capacity_summary\n    WHERE week_start_date <= CURRENT_DATE\n),\nsummary AS (\n    SELECT *\n    FROM public.vw_weekly_portfolio_capacity_summary\n    WHERE week_start_date = (\n        SELECT week_start_date FROM latest_week\n    )\n),\nexceptions AS (\n    SELECT\n        resource_id,\n        resource_name,\n        role,\n        department,\n        week_start_date,\n        available_hours,\n        demand_hours,\n        utilization_pct,\n        overallocation_hours,\n        severity,\n        conflict_id,\n        conflict_status,\n        approval_status,\n        governance_status,\n        decision_owner,\n        decision_date\n    FROM public.vw_weekly_capacity_governance\n    WHERE week_start_date = (\n        SELECT week_start_date FROM latest_week\n    )\n      AND (\n          utilization_pct >= 100\n          OR severity IN ('Critical', 'High')\n          OR governance_status IN (\n              'PENDING_APPROVAL',\n              'REJECTED_MITIGATION',\n              'CONFLICT_NO_DECISION'\n          )\n      )\n)\nSELECT json_build_object(\n    'week_start_date', s.week_start_date,\n    'portfolio', json_build_object(\n        'total_available_capacity_hours', s.total_available_capacity_hours,\n        'total_demand_hours', s.total_demand_hours,\n        'portfolio_utilization_pct', s.portfolio_utilization_pct,\n        'overloaded_resources', s.overloaded_resources,\n        'critical_resources', s.critical_resources,\n        'pending_approvals', s.pending_approvals,\n        'approved_mitigations', s.approved_mitigations,\n        'rejected_mitigations', s.rejected_mitigations,\n        'conflicts_without_decision', s.conflicts_without_decision\n    ),\n    'exceptions', COALESCE(\n        (\n            SELECT json_agg(\n                json_build_object(\n                    'resource_id', e.resource_id,\n                    'resource_name', e.resource_name,\n                    'role', e.role,\n                    'department', e.department,\n                    'available_hours', e.available_hours,\n                    'demand_hours', e.demand_hours,\n                    'utilization_pct', e.utilization_pct,\n                    'overallocation_hours', e.overallocation_hours,\n                    'severity', e.severity,\n                    'conflict_id', e.conflict_id,\n                    'conflict_status', e.conflict_status,\n                    'approval_status', e.approval_status,\n                    'governance_status', e.governance_status,\n                    'decision_owner', e.decision_owner,\n                    'decision_date', e.decision_date\n                )\n                ORDER BY\n                    CASE e.severity\n                        WHEN 'Critical' THEN 1\n                        WHEN 'High' THEN 2\n                        WHEN 'Warning' THEN 3\n                        ELSE 4\n                    END,\n                    e.utilization_pct DESC\n            )\n            FROM exceptions e\n        ),\n        '[]'::json\n    )\n) AS dashboard\nFROM summary s;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        224,
+        0
+      ],
+      "id": "20a17506-fdc5-4ded-aece-0c2d5870a6ce",
+      "name": "Get Latest Portfolio Dashboard Data1",
+      "credentials": {
+        "postgres": {
+          "id": "nt4wxwkKIfBcVIkX",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "path": "project07/dashboard",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "http://localhost:5173"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "b4c1a2b5-75b5-4ea1-96bb-5c72b967c0de",
+      "name": "webhook",
+      "webhookId": "8545e36d-b089-4c87-ab62-c9f03b3d7dc7"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json.dashboard }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        448,
+        0
+      ],
+      "id": "3460959e-a292-4b69-b7fc-f18cb6adcb50",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "path": "project07/conflicts",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "http://localhost:5173"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        -176
+      ],
+      "id": "5808ceba-abf9-4c77-ad7e-0e35559647e1",
+      "name": "Webhook",
+      "webhookId": "0a10abea-a4c6-4f25-b262-947007bed76d"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    c.conflict_id,\n    c.resource_id,\n    r.resource_name,\n    r.role,\n    r.department,\n    c.week_start_date,\n    c.utilization_pct,\n    c.overallocation_hours,\n    c.severity,\n    c.conflict_type,\n    c.status AS conflict_status,\n    d.decision_id,\n    d.approval_status,\n    d.decision,\n    d.decision_owner,\n    d.decision_date,\n    CASE\n        WHEN d.decision_id IS NULL THEN 'CONFLICT_NO_DECISION'\n        WHEN d.approval_status = 'Pending' THEN 'PENDING_APPROVAL'\n        WHEN d.approval_status = 'Approved' THEN 'APPROVED_MITIGATION'\n        WHEN d.approval_status = 'Rejected' THEN 'REJECTED_MITIGATION'\n        ELSE 'CONFLICT_OPEN'\n    END AS governance_status\nFROM capacity_conflicts c\nJOIN resources r\n  ON r.resource_id = c.resource_id\nLEFT JOIN LATERAL (\n    SELECT\n        cd.decision_id,\n        cd.approval_status,\n        cd.decision,\n        cd.decision_owner,\n        cd.decision_date\n    FROM capacity_decisions cd\n    WHERE cd.conflict_id = c.conflict_id\n    ORDER BY cd.created_at DESC\n    LIMIT 1\n) d ON true\nORDER BY\n    CASE c.severity\n        WHEN 'Critical' THEN 1\n        WHEN 'High' THEN 2\n        WHEN 'Warning' THEN 3\n        ELSE 4\n    END,\n    c.utilization_pct DESC;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        224,
+        -176
+      ],
+      "id": "14aba2de-9f18-4b71-8656-e986b7f50782",
+      "name": "Get Conflict Register",
+      "credentials": {
+        "postgres": {
+          "id": "nt4wxwkKIfBcVIkX",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $input.all().map(item => item.json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        448,
+        -176
+      ],
+      "id": "4007dae2-a79d-4e0c-a052-83b4c79eab6d",
+      "name": "Respond to Webhook1"
+    },
+    {
+      "parameters": {
+        "path": "project07/scenarios",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "http://localhost:5173"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        16,
+        -352
+      ],
+      "id": "de2bba38-d3e0-4e8d-ba34-c96a234b28a5",
+      "name": "Webhook1",
+      "webhookId": "12f00ad5-9e20-47ac-a620-8ca4c104f034"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $input.all().map(item => item.json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        464,
+        -352
+      ],
+      "id": "b98456f9-287f-492e-a189-e3d1305b6010",
+      "name": "Respond to Webhook2"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    vr.scenario_id,\n    vr.scenario_name,\n    cs.scenario_description,\n\n    vr.conflict_id,\n    vr.resource_id,\n    r.resource_name,\n    r.role,\n    r.department,\n    vr.week_start_date,\n\n    vr.baseline_demand_hours,\n    vr.capacity_hours,\n    vr.baseline_utilization_pct,\n\n    vr.scenario_demand_hours,\n    vr.scenario_utilization_pct,\n    vr.scenario_outcome,\n\n    vr.effectiveness_score,\n    vr.governance_score,\n    vr.overall_recommendation_score,\n    vr.recommendation_rank,\n\n    cs.critical_path_impact,\n    cs.priority_impact,\n    cs.creates_secondary_conflict,\n\n    COALESCE(\n        (\n            SELECT json_agg(\n                json_build_object(\n                    'project_id', sa.project_id,\n                    'resource_id', sa.resource_id,\n                    'activity_name', sa.activity_name,\n                    'original_week_start_date', sa.original_week_start_date,\n                    'proposed_week_start_date', sa.proposed_week_start_date,\n                    'original_hours', sa.original_hours,\n                    'proposed_hours', sa.proposed_hours,\n                    'change_type', sa.change_type\n                )\n                ORDER BY sa.scenario_allocation_id\n            )\n            FROM scenario_allocations sa\n            WHERE sa.scenario_id = vr.scenario_id\n        ),\n        '[]'::json\n    ) AS proposed_changes\n\nFROM vw_scenario_recommendations vr\n\nJOIN capacity_scenarios cs\n  ON cs.scenario_id = vr.scenario_id\n\nJOIN resources r\n  ON r.resource_id = vr.resource_id\n\nORDER BY\n    vr.conflict_id,\n    vr.recommendation_rank;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        240,
+        -352
+      ],
+      "id": "2f740d77-aedc-4aa0-aaf2-d99eaef94e5e",
+      "name": "Get Scenario Analysis",
+      "credentials": {
+        "postgres": {
+          "id": "nt4wxwkKIfBcVIkX",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "project07/resource-planning",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "http://localhost:5173"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        16,
+        208
+      ],
+      "id": "fafca487-58c6-46a6-be90-d2702e29afce",
+      "name": "Webhook2",
+      "webhookId": "49558c77-6e24-4791-a4e5-351616f37a48"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json.body ?? $json;\n\nconst errors = [];\n\nconst validPriorities = [\n  'Critical',\n  'High',\n  'Medium',\n  'Low'\n];\n\nfunction isValidDate(value) {\n  return /^\\d{4}-\\d{2}-\\d{2}$/.test(value || '');\n}\n\nfunction isMonday(dateString) {\n  const d = new Date(`${dateString}T00:00:00Z`);\n  return d.getUTCDay() === 1;\n}\n\nfunction isNonNegativeNumber(value) {\n  return (\n    typeof value === 'number' &&\n    Number.isFinite(value) &&\n    value >= 0\n  );\n}\n\n// ------------------------\n// Project\n// ------------------------\n\nif (!input.project) {\n  errors.push('project object is required');\n} else {\n  if (!/^PRJ-\\d{3}$/.test(input.project.project_id || '')) {\n    errors.push(\n      'project.project_id must follow PRJ-###'\n    );\n  }\n\n  if (!input.project.project_name) {\n    errors.push(\n      'project.project_name is required'\n    );\n  }\n\n  if (!validPriorities.includes(input.project.priority)) {\n    errors.push(\n      'project.priority must be Critical, High, Medium or Low'\n    );\n  }\n\n  if (!isValidDate(input.project.start_date)) {\n    errors.push(\n      'project.start_date must use YYYY-MM-DD'\n    );\n  }\n\n  if (!isValidDate(input.project.end_date)) {\n    errors.push(\n      'project.end_date must use YYYY-MM-DD'\n    );\n  }\n\n  if (\n    isValidDate(input.project.start_date) &&\n    isValidDate(input.project.end_date) &&\n    input.project.end_date < input.project.start_date\n  ) {\n    errors.push(\n      'project.end_date cannot be before start_date'\n    );\n  }\n}\n\n// ------------------------\n// Resource\n// ------------------------\n\nif (!input.resource) {\n  errors.push('resource object is required');\n} else {\n  if (!/^RES-\\d{3}$/.test(input.resource.resource_id || '')) {\n    errors.push(\n      'resource.resource_id must follow RES-###'\n    );\n  }\n\n  if (!input.resource.resource_name) {\n    errors.push(\n      'resource.resource_name is required'\n    );\n  }\n\n  if (!input.resource.role) {\n    errors.push(\n      'resource.role is required'\n    );\n  }\n\n  if (!input.resource.department) {\n    errors.push(\n      'resource.department is required'\n    );\n  }\n\n  if (\n    !isNonNegativeNumber(\n      input.resource.standard_weekly_hours\n    )\n  ) {\n    errors.push(\n      'resource.standard_weekly_hours must be a non-negative number'\n    );\n  }\n}\n\n// ------------------------\n// Capacity\n// ------------------------\n\nif (!input.capacity) {\n  errors.push('capacity object is required');\n} else {\n  if (!isValidDate(input.capacity.week_start_date)) {\n    errors.push(\n      'capacity.week_start_date must use YYYY-MM-DD'\n    );\n  } else if (!isMonday(input.capacity.week_start_date)) {\n    errors.push(\n      'capacity.week_start_date must be a Monday'\n    );\n  }\n\n  const capacityFields = [\n    'standard_hours',\n    'leave_hours',\n    'holiday_hours',\n    'training_hours',\n    'bau_hours'\n  ];\n\n  for (const field of capacityFields) {\n    if (\n      !isNonNegativeNumber(\n        input.capacity[field]\n      )\n    ) {\n      errors.push(\n        `capacity.${field} must be a non-negative number`\n      );\n    }\n  }\n}\n\n// ------------------------\n// Demand\n// ------------------------\n\nif (\n  !Array.isArray(input.demand) ||\n  input.demand.length === 0\n) {\n  errors.push(\n    'demand must contain at least one activity'\n  );\n} else {\n  input.demand.forEach((d, index) => {\n    if (!/^PRJ-\\d{3}$/.test(d.project_id || '')) {\n      errors.push(\n        `demand[${index}].project_id must follow PRJ-###`\n      );\n    }\n\n    if (!d.activity_name) {\n      errors.push(\n        `demand[${index}].activity_name is required`\n      );\n    }\n\n    if (!isNonNegativeNumber(d.planned_hours)) {\n      errors.push(\n        `demand[${index}].planned_hours must be a non-negative number`\n      );\n    }\n\n    if (!validPriorities.includes(d.priority)) {\n      errors.push(\n        `demand[${index}].priority must be Critical, High, Medium or Low`\n      );\n    }\n\n    if (typeof d.critical_path !== 'boolean') {\n      errors.push(\n        `demand[${index}].critical_path must be true or false`\n      );\n    }\n  });\n}\n\n// ------------------------\n// Final output\n// ------------------------\n\nif (errors.length > 0) {\n  return {\n    json: {\n      validation_status: 'FAILED',\n      valid: false,\n      error_count: errors.length,\n      errors,\n      original_payload: input\n    }\n  };\n}\n\nreturn {\n  json: {\n    validation_status: 'PASSED',\n    valid: true,\n    error_count: 0,\n    errors: [],\n    payload: input\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        208
+      ],
+      "id": "504ecb69-7802-4e78-b664-6cc826de9809",
+      "name": "Validate Intake Payload"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "38128e9c-c2bd-4efd-8507-3f6c0d08fdc0",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        432,
+        208
+      ],
+      "id": "775ade45-36bd-4e23-a0dc-ddb619b001c3",
+      "name": "Validation Passed?"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const payload = $json.payload;\n\nconst project = {\n  project_id:\n    payload.project.project_id.trim().toUpperCase(),\n\n  project_name:\n    payload.project.project_name.trim(),\n\n  priority:\n    payload.project.priority,\n\n  status:\n    payload.project.status || 'Active',\n\n  start_date:\n    payload.project.start_date,\n\n  end_date:\n    payload.project.end_date\n};\n\nconst resource = {\n  resource_id:\n    payload.resource.resource_id.trim().toUpperCase(),\n\n  resource_name:\n    payload.resource.resource_name.trim(),\n\n  role:\n    payload.resource.role.trim(),\n\n  department:\n    payload.resource.department.trim(),\n\n  standard_weekly_hours:\n    Number(payload.resource.standard_weekly_hours),\n\n  active:\n    payload.resource.active !== false\n};\n\nconst capacity = {\n  resource_id:\n    resource.resource_id,\n\n  week_start_date:\n    payload.capacity.week_start_date,\n\n  standard_hours:\n    Number(payload.capacity.standard_hours),\n\n  leave_hours:\n    Number(payload.capacity.leave_hours || 0),\n\n  holiday_hours:\n    Number(payload.capacity.holiday_hours || 0),\n\n  training_hours:\n    Number(payload.capacity.training_hours || 0),\n\n  bau_hours:\n    Number(payload.capacity.bau_hours || 0)\n};\n\nconst demand = payload.demand.map(\n  (d, index) => ({\n    demand_sequence:\n      index + 1,\n\n    resource_id:\n      resource.resource_id,\n\n    project_id:\n      d.project_id.trim().toUpperCase(),\n\n    week_start_date:\n      payload.capacity.week_start_date,\n\n    activity_name:\n      d.activity_name.trim(),\n\n    planned_hours:\n      Number(d.planned_hours),\n\n    priority:\n      d.priority,\n\n    critical_path:\n      Boolean(d.critical_path)\n  })\n);\n\nreturn {\n  json: {\n    intake_status: 'NORMALIZED',\n    project,\n    resource,\n    capacity,\n    demand,\n    demand_count: demand.length\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        704,
+        112
+      ],
+      "id": "b0c5d527-6b53-4217-a9a0-d8a651ef63da",
+      "name": "Normalize Planning Data"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {\n  status: 'FAILED',\n  validation_status: $json.validation_status,\n  error_count: $json.error_count,\n  errors: $json.errors\n} }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        720,
+        304
+      ],
+      "id": "57be437a-785d-4251-8ab8-ad24d0432556",
+      "name": "Respond Validation Error"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO projects (\n    project_id,\n    project_name,\n    priority,\n    status,\n    start_date,\n    end_date\n)\nVALUES (\n    $1,$2,$3,$4,$5,$6\n)\nON CONFLICT (project_id)\nDO UPDATE SET\n    project_name = EXCLUDED.project_name,\n    priority = EXCLUDED.priority,\n    status = EXCLUDED.status,\n    start_date = EXCLUDED.start_date,\n    end_date = EXCLUDED.end_date\nRETURNING *;",
+        "options": {
+          "queryReplacement": "={{ [   $node[\"Normalize Planning Data\"].json.project.project_id,   $node[\"Normalize Planning Data\"].json.project.project_name,   $node[\"Normalize Planning Data\"].json.project.priority,   $node[\"Normalize Planning Data\"].json.project.status,   $node[\"Normalize Planning Data\"].json.project.start_date,   $node[\"Normalize Planning Data\"].json.project.end_date ] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        864,
+        112
+      ],
+      "id": "0b3e2284-4f44-44f8-9fa9-8caf7fb8d33b",
+      "name": "Upsert Project",
+      "credentials": {
+        "postgres": {
+          "id": "nt4wxwkKIfBcVIkX",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO resources (\n    resource_id,\n    resource_name,\n    role,\n    department,\n    standard_weekly_hours,\n    active\n)\nVALUES (\n    $1,$2,$3,$4,$5,$6\n)\nON CONFLICT (resource_id)\nDO UPDATE SET\n    resource_name = EXCLUDED.resource_name,\n    role = EXCLUDED.role,\n    department = EXCLUDED.department,\n    standard_weekly_hours = EXCLUDED.standard_weekly_hours,\n    active = EXCLUDED.active\nRETURNING *;",
+        "options": {
+          "queryReplacement": "={{ [   $node[\"Normalize Planning Data\"].json.resource.resource_id,   $node[\"Normalize Planning Data\"].json.resource.resource_name,   $node[\"Normalize Planning Data\"].json.resource.role,   $node[\"Normalize Planning Data\"].json.resource.department,   $node[\"Normalize Planning Data\"].json.resource.standard_weekly_hours,   $node[\"Normalize Planning Data\"].json.resource.active ] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        1040,
+        112
+      ],
+      "id": "9de2c8b1-ecb3-4ac6-b437-f3d121553174",
+      "name": "Upsert Resource",
+      "credentials": {
+        "postgres": {
+          "id": "nt4wxwkKIfBcVIkX",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO resource_capacity (\n    resource_id,\n    week_start_date,\n    standard_hours,\n    leave_hours,\n    holiday_hours,\n    training_hours,\n    bau_hours\n)\nVALUES (\n    $1,$2,$3,$4,$5,$6,$7\n)\nON CONFLICT (\n    resource_id,\n    week_start_date\n)\nDO UPDATE SET\n    standard_hours = EXCLUDED.standard_hours,\n    leave_hours = EXCLUDED.leave_hours,\n    holiday_hours = EXCLUDED.holiday_hours,\n    training_hours = EXCLUDED.training_hours,\n    bau_hours = EXCLUDED.bau_hours\nRETURNING *;",
+        "options": {
+          "queryReplacement": "={{ [   $node[\"Normalize Planning Data\"].json.capacity.resource_id,   $node[\"Normalize Planning Data\"].json.capacity.week_start_date,   $node[\"Normalize Planning Data\"].json.capacity.standard_hours,   $node[\"Normalize Planning Data\"].json.capacity.leave_hours,   $node[\"Normalize Planning Data\"].json.capacity.holiday_hours,   $node[\"Normalize Planning Data\"].json.capacity.training_hours,   $node[\"Normalize Planning Data\"].json.capacity.bau_hours ] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        1200,
+        112
+      ],
+      "id": "13e4d502-707e-4927-9cad-c66168f79e16",
+      "name": "Upsert Resource Capacity",
+      "credentials": {
+        "postgres": {
+          "id": "nt4wxwkKIfBcVIkX",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const normalized =\n  $items(\"Normalize Planning Data\")[0].json;\n\nreturn normalized.demand.map(d => ({\n  json: {\n    resource_id:\n      d.resource_id,\n\n    project_id:\n      d.project_id,\n\n    week_start_date:\n      d.week_start_date,\n\n    activity_name:\n      d.activity_name,\n\n    planned_hours:\n      d.planned_hours,\n\n    priority:\n      d.priority,\n\n    critical_path:\n      d.critical_path\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1376,
+        112
+      ],
+      "id": "813fdede-92da-4fb7-a296-235ac40672d9",
+      "name": "Prepare Resource Demand Records"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO resource_demand (\n    resource_id,\n    project_id,\n    week_start_date,\n    activity_name,\n    planned_hours,\n    activity_priority,\n    critical_path\n)\nVALUES (\n    $1,$2,$3,$4,$5,$6,$7\n)\nON CONFLICT (\n    resource_id,\n    project_id,\n    week_start_date,\n    activity_name\n)\nDO UPDATE SET\n    planned_hours =\n        EXCLUDED.planned_hours,\n\n    activity_priority =\n        EXCLUDED.activity_priority,\n\n    critical_path =\n        EXCLUDED.critical_path,\n\n    updated_at =\n        CURRENT_TIMESTAMP\nRETURNING *;",
+        "options": {
+          "queryReplacement": "={{ [   $json.resource_id,   $json.project_id,   $json.week_start_date,   $json.activity_name,   $json.planned_hours,   $json.priority,   $json.critical_path ] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        1536,
+        112
+      ],
+      "id": "4602cf42-c8f3-45a5-8359-c8b21d7d8846",
+      "name": "Upsert Resource Demand",
+      "credentials": {
+        "postgres": {
+          "id": "nt4wxwkKIfBcVIkX",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const normalized =\n  $items(\"Normalize Planning Data\")[0].json;\n\nreturn [{\n  json: {\n    resource_id:\n      normalized.resource.resource_id,\n\n    week_start_date:\n      normalized.capacity.week_start_date,\n\n    demand_records_processed:\n      $input.all().length\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1696,
+        112
+      ],
+      "id": "a0aced6a-edc1-4ee5-980e-22e5b8b7a10b",
+      "name": "Collapse Demand Results"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH utilization AS (\n    SELECT\n        rc.resource_id,\n        rc.week_start_date,\n        rc.available_hours,\n\n        COALESCE(\n            SUM(rd.planned_hours),\n            0\n        ) AS demand_hours,\n\n        ROUND(\n            CASE\n                WHEN rc.available_hours > 0\n                THEN (\n                    COALESCE(\n                        SUM(rd.planned_hours),\n                        0\n                    )\n                    / rc.available_hours\n                ) * 100\n                ELSE 0\n            END,\n            2\n        ) AS utilization_pct,\n\n        GREATEST(\n            COALESCE(\n                SUM(rd.planned_hours),\n                0\n            ) - rc.available_hours,\n            0\n        ) AS overallocation_hours\n\n    FROM resource_capacity rc\n\n    LEFT JOIN resource_demand rd\n      ON rd.resource_id = rc.resource_id\n     AND rd.week_start_date =\n         rc.week_start_date\n\n    WHERE rc.resource_id = $1\n      AND rc.week_start_date = $2\n\n    GROUP BY\n        rc.resource_id,\n        rc.week_start_date,\n        rc.available_hours\n),\n\nclassified AS (\n    SELECT\n        u.*,\n\n        CASE\n            WHEN u.utilization_pct >= 120\n                THEN 'Critical'\n\n            WHEN u.utilization_pct >= 100\n                THEN 'High'\n\n            WHEN u.utilization_pct >= 85\n                THEN 'Warning'\n\n            ELSE 'Normal'\n        END AS severity\n\n    FROM utilization u\n)\n\nINSERT INTO capacity_conflicts (\n    resource_id,\n    week_start_date,\n    conflict_type,\n    utilization_pct,\n    overallocation_hours,\n    severity,\n    status\n)\n\nSELECT\n    resource_id,\n    week_start_date,\n    'RESOURCE_OVERALLOCATION',\n    utilization_pct,\n    overallocation_hours,\n    severity,\n    'Open'\n\nFROM classified\n\nWHERE utilization_pct >= 100\n\nON CONFLICT (\n    resource_id,\n    week_start_date,\n    conflict_type\n)\n\nDO UPDATE SET\n    utilization_pct =\n        EXCLUDED.utilization_pct,\n\n    overallocation_hours =\n        EXCLUDED.overallocation_hours,\n\n    severity =\n        EXCLUDED.severity,\n\n    status =\n        'Open'\n\nRETURNING *;",
+        "options": {
+          "queryReplacement": "={{ [   $json.resource_id,   $json.week_start_date ] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        1872,
+        112
+      ],
+      "id": "0079a058-9ea9-40e8-a90a-28f6ebdfb390",
+      "name": "Recalculate Capacity Conflicts",
+      "credentials": {
+        "postgres": {
+          "id": "nt4wxwkKIfBcVIkX",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const normalized =\n  $items(\"Normalize Planning Data\")[0].json;\n\nconst conflictItems =\n  $items(\"Recalculate Capacity Conflicts\");\n\nconst conflict =\n  conflictItems.length > 0\n    ? conflictItems[0].json\n    : null;\n\nconst availableHours =\n  normalized.capacity.standard_hours\n  - normalized.capacity.leave_hours\n  - normalized.capacity.holiday_hours\n  - normalized.capacity.training_hours\n  - normalized.capacity.bau_hours;\n\nconst totalDemand =\n  normalized.demand.reduce(\n    (sum, d) =>\n      sum + Number(d.planned_hours),\n    0\n  );\n\nreturn [{\n  json: {\n    intake_status:\n      'COMPLETED',\n\n    project: {\n      project_id:\n        normalized.project.project_id,\n\n      project_name:\n        normalized.project.project_name\n    },\n\n    resource: {\n      resource_id:\n        normalized.resource.resource_id,\n\n      resource_name:\n        normalized.resource.resource_name,\n\n      role:\n        normalized.resource.role,\n\n      department:\n        normalized.resource.department\n    },\n\n    capacity: {\n      week_start_date:\n        normalized.capacity.week_start_date,\n\n      standard_hours:\n        normalized.capacity.standard_hours,\n\n      leave_hours:\n        normalized.capacity.leave_hours,\n\n      holiday_hours:\n        normalized.capacity.holiday_hours,\n\n      training_hours:\n        normalized.capacity.training_hours,\n\n      bau_hours:\n        normalized.capacity.bau_hours,\n\n      available_hours:\n        availableHours\n    },\n\n    demand: {\n      activities_processed:\n        normalized.demand.length,\n\n      total_planned_hours:\n        totalDemand\n    },\n\n    conflict_detected:\n      conflict !== null,\n\n    conflict:\n      conflict\n        ? {\n            conflict_id:\n              conflict.conflict_id,\n\n            utilization_pct:\n              Number(\n                conflict.utilization_pct\n              ),\n\n            overallocation_hours:\n              Number(\n                conflict.overallocation_hours\n              ),\n\n            severity:\n              conflict.severity,\n\n            status:\n              conflict.status\n          }\n        : null\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2048,
+        112
+      ],
+      "id": "11be7f3a-cd3e-4fb9-972f-5df0ba0bf025",
+      "name": "Build Intake Result"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2224,
+        112
+      ],
+      "id": "fabe7f8b-d49c-4fe8-854f-a006987ead0c",
+      "name": "Respond Success"
+    },
+    {
+      "parameters": {
+        "path": "project07/governance",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "http://localhost:5173"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        32,
+        416
+      ],
+      "id": "cd4bec09-8a75-4494-9d9f-deaa35926cd5",
+      "name": "Webhook3",
+      "webhookId": "65cdeead-1efb-41d4-859e-9641ab579083"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH latest_decisions AS (\n    SELECT DISTINCT ON (cd.conflict_id)\n        cd.conflict_id,\n        cd.decision_id,\n        cd.approval_status,\n        cd.decision,\n        cd.decision_owner,\n        cd.decision_date,\n        cd.created_at\n    FROM capacity_decisions cd\n    ORDER BY\n        cd.conflict_id,\n        cd.created_at DESC\n),\n\naudit_summary AS (\n    SELECT\n        COUNT(DISTINCT decision_id) FILTER (\n            WHERE action = 'RECOMMENDATION_CREATED'\n        ) AS recommendations_created,\n\n        COUNT(DISTINCT decision_id) FILTER (\n            WHERE action = 'DECISION_APPROVED'\n        ) AS decisions_approved,\n\n        COUNT(DISTINCT decision_id) FILTER (\n            WHERE action = 'DECISION_REJECTED'\n        ) AS decisions_rejected,\n\n        COUNT(DISTINCT decision_id) AS decisions_touched,\n\n        COUNT(DISTINCT conflict_id) AS conflicts_touched,\n\n        COUNT(*) AS governance_events\n    FROM capacity_decision_audit\n),\n\nrecent_audit AS (\n    SELECT\n        a.audit_id,\n        a.decision_id,\n        a.conflict_id,\n        a.previous_status,\n        a.new_status,\n        a.action,\n        a.action_by,\n        a.action_source,\n        a.action_timestamp,\n        a.notes\n    FROM capacity_decision_audit a\n    ORDER BY a.action_timestamp DESC\n    LIMIT 25\n)\n\nSELECT json_build_object(\n    'summary',\n        (\n            SELECT json_build_object(\n                'recommendations_created', recommendations_created,\n                'decisions_approved', decisions_approved,\n                'decisions_rejected', decisions_rejected,\n                'decisions_touched', decisions_touched,\n                'conflicts_touched', conflicts_touched,\n                'governance_events', governance_events\n            )\n            FROM audit_summary\n        ),\n\n    'decisions',\n        COALESCE(\n            (\n                SELECT json_agg(\n                    json_build_object(\n                        'conflict_id', ld.conflict_id,\n                        'decision_id', ld.decision_id,\n                        'approval_status', ld.approval_status,\n                        'decision', ld.decision,\n                        'decision_owner', ld.decision_owner,\n                        'decision_date', ld.decision_date,\n                        'created_at', ld.created_at\n                    )\n                    ORDER BY ld.conflict_id\n                )\n                FROM latest_decisions ld\n            ),\n            '[]'::json\n        ),\n\n    'audit',\n        COALESCE(\n            (\n                SELECT json_agg(\n                    json_build_object(\n                        'audit_id', ra.audit_id,\n                        'decision_id', ra.decision_id,\n                        'conflict_id', ra.conflict_id,\n                        'previous_status', ra.previous_status,\n                        'new_status', ra.new_status,\n                        'action', ra.action,\n                        'action_by', ra.action_by,\n                        'action_source', ra.action_source,\n                        'action_timestamp', ra.action_timestamp,\n                        'notes', ra.notes\n                    )\n                )\n                FROM recent_audit ra\n            ),\n            '[]'::json\n        )\n) AS governance;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        256,
+        416
+      ],
+      "id": "58d4f7b7-b1df-414e-9399-6e03a6cc5bd3",
+      "name": "Get Governance Dashboard",
+      "credentials": {
+        "postgres": {
+          "id": "nt4wxwkKIfBcVIkX",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json.governance }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        480,
+        416
+      ],
+      "id": "781861e1-b2c6-4d86-8b67-acd31265eaf1",
+      "name": "Respond to Webhook3"
+    },
+    {
+      "parameters": {
+        "path": "project07/weekly-reports",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "http://localhost:5173"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        32,
+        608
+      ],
+      "id": "bf8aa6df-3ea4-434c-b0fe-1159c2a7b05d",
+      "name": "Webhook4",
+      "webhookId": "5bba7681-1104-492d-8872-440818db3e31"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT json_build_object(\n    'reports',\n    COALESCE(\n        (\n            SELECT json_agg(\n                json_build_object(\n                    'report_id', r.report_id,\n                    'report_week_start', r.report_week_start,\n                    'report_week_end', r.report_week_end,\n                    'generated_at', r.generated_at,\n                    'total_available_capacity_hours', r.total_available_capacity_hours,\n                    'total_demand_hours', r.total_demand_hours,\n                    'portfolio_utilization_pct', r.portfolio_utilization_pct,\n                    'overloaded_resources', r.overloaded_resources,\n                    'critical_resources', r.critical_resources,\n                    'recommendations_created', r.recommendations_created,\n                    'decisions_approved', r.decisions_approved,\n                    'decisions_rejected', r.decisions_rejected,\n                    'pending_approvals', r.pending_approvals,\n                    'conflicts_without_decision', r.conflicts_without_decision,\n                    'report_status', r.report_status,\n                    'exceptions',\n                    COALESCE(\n                        (\n                            SELECT json_agg(\n                                json_build_object(\n                                    'report_exception_id', e.report_exception_id,\n                                    'resource_id', e.resource_id,\n                                    'conflict_id', e.conflict_id,\n                                    'utilization_pct', e.utilization_pct,\n                                    'overallocation_hours', e.overallocation_hours,\n                                    'severity', e.severity,\n                                    'governance_status', e.governance_status,\n                                    'decision_status', e.decision_status\n                                )\n                                ORDER BY e.utilization_pct DESC\n                            )\n                            FROM weekly_capacity_report_exceptions e\n                            WHERE e.report_id = r.report_id\n                        ),\n                        '[]'::json\n                    )\n                )\n                ORDER BY r.generated_at DESC\n            )\n            FROM weekly_capacity_reports r\n        ),\n        '[]'::json\n    )\n) AS weekly_reports;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        256,
+        608
+      ],
+      "id": "14525308-1389-4495-a570-3b648c1550f8",
+      "name": "Get Weekly Reports",
+      "credentials": {
+        "postgres": {
+          "id": "nt4wxwkKIfBcVIkX",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json.weekly_reports }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        480,
+        608
+      ],
+      "id": "e06acabb-f739-4c77-9c64-0ce77f020ac3",
+      "name": "Respond to Webhook4"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "webhook": {
+      "main": [
+        [
+          {
+            "node": "Get Latest Portfolio Dashboard Data1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Latest Portfolio Dashboard Data1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get Conflict Register",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Conflict Register": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Get Scenario Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Scenario Analysis": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook2": {
+      "main": [
+        [
+          {
+            "node": "Validate Intake Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Intake Payload": {
+      "main": [
+        [
+          {
+            "node": "Validation Passed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validation Passed?": {
+      "main": [
+        [
+          {
+            "node": "Normalize Planning Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Validation Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Planning Data": {
+      "main": [
+        [
+          {
+            "node": "Upsert Project",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Project": {
+      "main": [
+        [
+          {
+            "node": "Upsert Resource",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Resource": {
+      "main": [
+        [
+          {
+            "node": "Upsert Resource Capacity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Resource Capacity": {
+      "main": [
+        [
+          {
+            "node": "Prepare Resource Demand Records",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Resource Demand Records": {
+      "main": [
+        [
+          {
+            "node": "Upsert Resource Demand",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Resource Demand": {
+      "main": [
+        [
+          {
+            "node": "Collapse Demand Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collapse Demand Results": {
+      "main": [
+        [
+          {
+            "node": "Recalculate Capacity Conflicts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recalculate Capacity Conflicts": {
+      "main": [
+        [
+          {
+            "node": "Build Intake Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Intake Result": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond Success": {
+      "main": [
+        []
+      ]
+    },
+    "Webhook3": {
+      "main": [
+        [
+          {
+            "node": "Get Governance Dashboard",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Governance Dashboard": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook4": {
+      "main": [
+        [
+          {
+            "node": "Get Weekly Reports",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Weekly Reports": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "ebb31ae4-13c9-4499-ab2a-af5767eff795",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ca19ab3d3cdf09f7e55378e9791459a0df6a3c73f10d678dcea7dbd2b88e0b7a"
+  },
+  "nodeGroups": [],
+  "id": "3FgYZIedVn4hdBVJ",
+  "tags": []
+}
