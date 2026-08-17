@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>AI Change Request Impact Analyzer</title>
+
+    <link
+        rel="stylesheet"
+        href="styles.css"
+    >
+</head>
+
+<body>
+
+    <main class="app-container">
+
+        <header class="page-header">
+
+            <p class="eyebrow">
+                PROJECT 06
+            </p>
+
+            <h1>
+                AI Change Request Impact Analyzer
+            </h1>
+
+            <p class="subtitle">
+                Submit a project change request for structured impact assessment.
+            </p>
+
+        </header>
+
+
+        <section class="card">
+
+            <h2>
+                New Change Request
+            </h2>
+
+
+            <form id="changeRequestForm">
+
+
+                <div class="form-group">
+
+                    <label for="projectCode">
+                        Project Code
+                    </label>
+
+                    <input
+                        type="text"
+                        id="projectCode"
+                        name="project_code"
+                        placeholder="PRJ-001"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="changeTitle">
+                        Change Title
+                    </label>
+
+                    <input
+                        type="text"
+                        id="changeTitle"
+                        name="change_title"
+                        placeholder="Enter change title"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="changeDescription">
+                        Change Description
+                    </label>
+
+                    <textarea
+                        id="changeDescription"
+                        name="change_description"
+                        rows="4"
+                        placeholder="Describe the proposed change"
+                        required
+                    ></textarea>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="businessReason">
+                        Business Reason
+                    </label>
+
+                    <textarea
+                        id="businessReason"
+                        name="business_reason"
+                        rows="4"
+                        placeholder="Explain why this change is required"
+                        required
+                    ></textarea>
+
+                </div>
+
+
+                <div class="form-group">
+
+                    <label for="requestedBy">
+                        Requested By
+                    </label>
+
+                    <input
+                        type="text"
+                        id="requestedBy"
+                        name="requested_by"
+                        placeholder="e.g. Information Security Manager"
+                        required
+                    >
+
+                </div>
+
+
+                <div class="form-row">
+
+
+                    <div class="form-group">
+
+                        <label for="priority">
+                            Priority
+                        </label>
+
+                        <select
+                            id="priority"
+                            name="priority"
+                            required
+                        >
+
+                            <option value="">
+                                Select priority
+                            </option>
+
+                            <option value="Low">
+                                Low
+                            </option>
+
+                            <option value="Medium">
+                                Medium
+                            </option>
+
+                            <option value="High">
+                                High
+                            </option>
+
+                            <option value="Critical">
+                                Critical
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="completionDate">
+                            Requested Completion Date
+                        </label>
+
+                        <input
+                            type="date"
+                            id="completionDate"
+                            name="requested_completion_date"
+                            required
+                        >
+
+                    </div>
+
+                </div>
+
+
+                <button
+                    type="submit"
+                    id="submitButton"
+                >
+                    Analyze Change Request
+                </button>
+
+
+            </form>
+
+
+            <div id="statusMessage"></div>
+
+
+        </section>
+
+        <!-- =========================
+        IMPACT ASSESSMENT RESULT
+        ========================== -->
+
+        <section
+        class="card results-card"
+        id="assessmentResults"
+        hidden
+        
+>
+
+        <!-- Result Header -->
+
+    <div class="results-header">
+
+        <div>
+
+            <p class="eyebrow">
+                IMPACT ASSESSMENT
+            </p>
+
+            <h2 id="resultChangeTitle">
+                Change Impact Assessment
+            </h2>
+
+        </div>
+
+
+        <div class="result-identifiers">
+
+            <span id="resultChangeCode">
+                CR-000
+            </span>
+
+            <span id="resultAssessmentId">
+                Assessment #0
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <!-- Project Information -->
+
+    <div class="result-project">
+
+        <span class="result-label">
+            Project
+        </span>
+
+        <strong id="resultProjectName">
+            Project Name
+        </strong>
+
+        <span id="resultProjectCode">
+            PRJ-000
+        </span>
+
+    </div>
+
+
+    <!-- Overall Impact + Recommendation -->
+
+    <div class="overall-impact-section">
+
+        <div>
+
+            <span class="result-label">
+                Overall Impact
+            </span>
+
+            <div
+                class="impact-badge"
+                id="resultOverallImpact"
+            >
+                Medium
+            </div>
+
+        </div>
+
+
+        <div>
+
+            <span class="result-label">
+                Recommendation
+            </span>
+
+            <div
+                class="recommendation-badge"
+                id="resultRecommendation"
+            >
+                Request More Information
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- Individual Impact Ratings -->
+
+    <div class="impact-grid">
+
+        <div class="impact-item">
+
+            <span class="impact-label">
+                Schedule
+            </span>
+
+            <strong id="resultScheduleRating">
+                -
+            </strong>
+
+        </div>
+
+
+        <div class="impact-item">
+
+            <span class="impact-label">
+                Cost
+            </span>
+
+            <strong id="resultCostRating">
+                -
+            </strong>
+
+        </div>
+
+
+        <div class="impact-item">
+
+            <span class="impact-label">
+                Resource
+            </span>
+
+            <strong id="resultResourceRating">
+                -
+            </strong>
+
+        </div>
+
+
+        <div class="impact-item">
+
+            <span class="impact-label">
+                Technical
+            </span>
+
+            <strong id="resultTechnicalRating">
+                -
+            </strong>
+
+        </div>
+
+
+        <div class="impact-item">
+
+            <span class="impact-label">
+                Risk
+            </span>
+
+            <strong id="resultRiskRating">
+                -
+            </strong>
+
+        </div>
+
+    </div>
+
+
+    <!-- Quantitative Fields -->
+
+    <div class="quantitative-grid">
+
+        <div class="result-metric">
+
+            <span class="result-label">
+                Schedule Impact
+            </span>
+
+            <strong id="resultScheduleDays">
+                Not available
+            </strong>
+
+        </div>
+
+
+        <div class="result-metric">
+
+            <span class="result-label">
+                Cost Impact
+            </span>
+
+            <strong id="resultCostImpact">
+                Not available
+            </strong>
+
+        </div>
+
+    </div>
+
+
+    <!-- AI Summary -->
+
+    <div class="result-section">
+
+        <h3>
+            AI Assessment Summary
+        </h3>
+
+        <p id="resultAiSummary">
+            Assessment summary will appear here.
+        </p>
+
+    </div>
+
+
+    <!-- Resource Impact -->
+
+    <div class="result-section">
+
+        <h3>
+            Resource Impact
+        </h3>
+
+        <p id="resultResourceImpact">
+            Resource impact assessment will appear here.
+        </p>
+
+    </div>
+
+
+    <!-- Technical Impact -->
+
+    <div class="result-section">
+
+        <h3>
+            Technical Impact
+        </h3>
+
+        <p id="resultTechnicalImpact">
+            Technical impact assessment will appear here.
+        </p>
+
+    </div>
+
+
+    <!-- Risk Impact -->
+
+    <div class="result-section">
+
+        <h3>
+            Risk Impact
+        </h3>
+
+        <p id="resultRiskImpact">
+            Risk impact assessment will appear here.
+        </p>
+
+        </div>
+
+        <!-- =========================
+HUMAN GOVERNANCE DECISION
+========================= -->
+
+<div class="governance-section">
+
+    <div class="governance-header">
+
+        <div>
+            <p class="eyebrow">
+                HUMAN-IN-THE-LOOP GOVERNANCE
+            </p>
+
+            <h3>
+                Governance Decision
+            </h3>
+
+            <p class="governance-description">
+                Review the AI assessment and record the final human governance decision.
+            </p>
+        </div>
+
+    </div>
+
+
+    <form id="governanceDecisionForm">
+
+        <input
+            type="hidden"
+            id="governanceChangeRequestId"
+        >
+
+        <input
+            type="hidden"
+            id="governanceAssessmentId"
+        >
+
+
+        <div class="form-group">
+
+            <label for="governanceDecision">
+                Decision
+            </label>
+
+            <select
+                id="governanceDecision"
+                required
+            >
+
+                <option value="">
+                    Select governance decision
+                </option>
+
+                <option value="Approved">
+                    Approve
+                </option>
+
+                <option value="Approved with Conditions">
+                    Approve with Conditions
+                </option>
+
+                <option value="Rejected">
+                    Reject
+                </option>
+
+                <option value="Request More Information">
+                    Request More Information
+                </option>
+
+            </select>
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label for="governanceDecidedBy">
+                Decided By
+            </label>
+
+            <input
+                type="text"
+                id="governanceDecidedBy"
+                placeholder="e.g. PMO Change Manager"
+                required
+            >
+
+        </div>
+
+
+        <div class="form-group">
+
+            <label for="governanceComments">
+                Decision Comments
+            </label>
+
+            <textarea
+                id="governanceComments"
+                rows="3"
+                placeholder="Record the rationale for the governance decision"
+            ></textarea>
+
+        </div>
+
+
+        <div
+            class="form-group"
+            id="governanceConditionsGroup"
+            hidden
+        >
+
+            <label for="governanceConditions">
+                Approval Conditions
+            </label>
+
+            <textarea
+                id="governanceConditions"
+                rows="3"
+                placeholder="Enter the conditions that must be satisfied"
+            ></textarea>
+
+        </div>
+
+
+        <button
+            type="submit"
+            id="governanceSubmitButton"
+        >
+            Record Governance Decision
+        </button>
+
+    </form>
+
+
+    <div id="governanceStatus"></div>
+
+</div>
+        <!-- Assessment Metadata -->
+
+        <div class="assessment-meta">
+
+        <span>
+            Assessment completed:
+            <strong id="resultAssessedAt">
+                -
+            </strong>
+        </span>
+
+        </div>
+
+        </section>
+        <!-- =========================
+CHANGE REQUEST REGISTER
+========================= -->
+
+<section class="card register-card">
+
+    <div class="register-header">
+
+        <div>
+            <p class="eyebrow">
+                CHANGE GOVERNANCE
+            </p>
+
+            <h2>
+                Change Request Register
+            </h2>
+
+            <p class="register-subtitle">
+                Current change requests and latest AI impact assessments.
+            </p>
+        </div>
+
+        <button
+            type="button"
+            id="refreshRegisterButton"
+            class="secondary-button"
+        >
+            Refresh Register
+        </button>
+
+    </div>
+
+
+    <div id="registerStatus"></div>
+
+
+    <div class="table-container">
+
+        <table class="register-table">
+
+            <thead>
+                <tr>
+                    <th>Change Request</th>
+                    <th>Change Title</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th>Overall Impact</th>
+                    <th>Recommendation</th>
+                    <th>Assessment</th>
+                </tr>
+            </thead>
+
+            <tbody id="changeRequestTableBody">
+
+                <tr>
+                    <td colspan="7" class="empty-table-message">
+                        Loading change requests...
+                    </td>
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</section>
+
+    </main>
+
+
+    <script src="app.js"></script>
+
+</body>
+
+</html>
