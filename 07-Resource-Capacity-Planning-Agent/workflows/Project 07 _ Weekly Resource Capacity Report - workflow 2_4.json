@@ -1,0 +1,419 @@
+{
+  "name": "Project 07 | Weekly Resource Capacity Report - workflow 2/4",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "triggerAtDay": [
+                1
+              ],
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        80
+      ],
+      "id": "69c23560-4204-4368-b6a9-afbea78138f8",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    MAX(week_start_date) AS report_week_start\nFROM public.vw_weekly_portfolio_capacity_summary\nWHERE week_start_date <= CURRENT_DATE;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        192,
+        80
+      ],
+      "id": "5efded1d-ea6a-4a9c-9b8d-c15ae8ec3aa6",
+      "name": "Get Latest Reporting Week",
+      "credentials": {
+        "postgres": {
+          "id": "nt4wxwkKIfBcVIkX",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    DATE_TRUNC('week', MAX(action_timestamp))::date\n        AS governance_week_start\nFROM public.capacity_decision_audit;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        192,
+        368
+      ],
+      "id": "fbc2d836-3915-40a9-8345-d89cb9c2eac7",
+      "name": "Get Governance Reporting Period",
+      "credentials": {
+        "postgres": {
+          "id": "nt4wxwkKIfBcVIkX",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    resource_id,\n    resource_name,\n    role,\n    department,\n    week_start_date,\n    available_hours,\n    demand_hours,\n    utilization_pct,\n    overallocation_hours,\n    severity,\n    conflict_id,\n    conflict_status,\n    approval_status,\n    governance_status,\n    decision_owner,\n    decision_date\nFROM public.vw_weekly_capacity_governance\nWHERE week_start_date = $1\n  AND (\n      utilization_pct >= 100\n      OR severity IN ('Critical', 'High')\n      OR governance_status IN (\n          'PENDING_APPROVAL',\n          'REJECTED_MITIGATION',\n          'CONFLICT_NO_DECISION'\n      )\n  )\nORDER BY\n    CASE severity\n        WHEN 'Critical' THEN 1\n        WHEN 'High' THEN 2\n        WHEN 'Warning' THEN 3\n        ELSE 4\n    END,\n    utilization_pct DESC;",
+        "options": {
+          "queryReplacement": "={{ [ $json.report_week_start ] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        544,
+        176
+      ],
+      "id": "40493aca-9124-4e22-805b-e58d5b857254",
+      "name": "Get Weekly Capacity Exceptions",
+      "credentials": {
+        "postgres": {
+          "id": "nt4wxwkKIfBcVIkX",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT *\nFROM public.vw_weekly_portfolio_capacity_summary\nWHERE week_start_date = $1;",
+        "options": {
+          "queryReplacement": "={{ [ $json.report_week_start ] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        528,
+        -48
+      ],
+      "id": "58c2539a-0855-4def-a291-fe9ad740cac1",
+      "name": "Get Weekly Portfolio Capacity Summary",
+      "credentials": {
+        "postgres": {
+          "id": "nt4wxwkKIfBcVIkX",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    COUNT(DISTINCT decision_id) FILTER (\n        WHERE action = 'RECOMMENDATION_CREATED'\n    ) AS recommendations_created,\n\n    COUNT(DISTINCT decision_id) FILTER (\n        WHERE action = 'DECISION_APPROVED'\n    ) AS decisions_approved,\n\n    COUNT(DISTINCT decision_id) FILTER (\n        WHERE action = 'DECISION_REJECTED'\n    ) AS decisions_rejected,\n\n    COUNT(DISTINCT decision_id) AS decisions_touched,\n\n    COUNT(DISTINCT conflict_id) AS conflicts_touched,\n\n    COUNT(*) AS governance_events\n\nFROM public.capacity_decision_audit\nWHERE action_timestamp >= $1::date\n  AND action_timestamp < ($1::date + INTERVAL '7 days');",
+        "options": {
+          "queryReplacement": "={{ [ $json.governance_week_start ] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        544,
+        368
+      ],
+      "id": "66ec8bfc-4a3c-4d67-951f-7a46f5b24e2c",
+      "name": "Get Weekly Governance Activity",
+      "credentials": {
+        "postgres": {
+          "id": "nt4wxwkKIfBcVIkX",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "numberInputs": 3
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        880,
+        144
+      ],
+      "id": "a92dc506-05a5-4492-983b-2db83862d1ba",
+      "name": "Merge Weekly Report Data"
+    },
+    {
+      "parameters": {
+        "jsCode": "const allItems = $input.all().map(item => item.json);\n\nconst summary = allItems.find(item =>\n  Object.prototype.hasOwnProperty.call(\n    item,\n    'total_available_capacity_hours'\n  )\n);\n\nconst governanceActivity = allItems.find(item =>\n  Object.prototype.hasOwnProperty.call(\n    item,\n    'recommendations_created'\n  )\n);\n\nconst exceptions = allItems.filter(item =>\n  Object.prototype.hasOwnProperty.call(\n    item,\n    'resource_id'\n  )\n);\n\nif (!summary) {\n  throw new Error('Weekly portfolio capacity summary not found');\n}\n\nif (!governanceActivity) {\n  throw new Error('Weekly governance activity not found');\n}\n\nconst governanceWeekStart =\n  $node[\"Get Governance Reporting Period\"].json.governance_week_start;\n\nreturn [\n  {\n    json: {\n      report: {\n        report_type: 'WEEKLY_RESOURCE_CAPACITY_REPORT',\n\n        capacity_week_start: summary.week_start_date,\n        governance_week_start: governanceWeekStart,\n\n        portfolio: {\n          total_available_capacity_hours:\n            Number(summary.total_available_capacity_hours),\n\n          total_demand_hours:\n            Number(summary.total_demand_hours),\n\n          portfolio_utilization_pct:\n            Number(summary.portfolio_utilization_pct),\n\n          overloaded_resources:\n            Number(summary.overloaded_resources),\n\n          critical_resources:\n            Number(summary.critical_resources)\n        },\n\n        governance_current_state: {\n          pending_approvals:\n            Number(summary.pending_approvals),\n\n          approved_mitigations:\n            Number(summary.approved_mitigations),\n\n          rejected_mitigations:\n            Number(summary.rejected_mitigations),\n\n          conflicts_without_decision:\n            Number(summary.conflicts_without_decision)\n        },\n\n        governance_activity: {\n          recommendations_created:\n            Number(governanceActivity.recommendations_created),\n\n          decisions_approved:\n            Number(governanceActivity.decisions_approved),\n\n          decisions_rejected:\n            Number(governanceActivity.decisions_rejected),\n\n          decisions_touched:\n            Number(governanceActivity.decisions_touched),\n\n          conflicts_touched:\n            Number(governanceActivity.conflicts_touched),\n\n          governance_events:\n            Number(governanceActivity.governance_events)\n        },\n\n        exceptions: exceptions.map(e => ({\n          resource_id: e.resource_id,\n          resource_name: e.resource_name,\n          role: e.role,\n          department: e.department,\n\n          available_hours:\n            Number(e.available_hours),\n\n          demand_hours:\n            Number(e.demand_hours),\n\n          utilization_pct:\n            Number(e.utilization_pct),\n\n          overallocation_hours:\n            Number(e.overallocation_hours),\n\n          severity: e.severity,\n          conflict_id: e.conflict_id,\n          conflict_status: e.conflict_status,\n          approval_status: e.approval_status,\n          governance_status: e.governance_status,\n          decision_owner: e.decision_owner,\n          decision_date: e.decision_date\n        }))\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1104,
+        160
+      ],
+      "id": "18370cab-7d64-4c5d-a4a9-705e347d14d0",
+      "name": "Build Weekly Capacity Report Payload"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO weekly_capacity_reports (\n    report_week_start,\n    report_week_end,\n    total_available_capacity_hours,\n    total_demand_hours,\n    portfolio_utilization_pct,\n    overloaded_resources,\n    critical_resources,\n    recommendations_created,\n    decisions_approved,\n    decisions_rejected,\n    pending_approvals,\n    conflicts_without_decision,\n    report_status\n)\nVALUES (\n    $1,\n    $1::date + 6,\n    $2,\n    $3,\n    $4,\n    $5,\n    $6,\n    $7,\n    $8,\n    $9,\n    $10,\n    $11,\n    'Generated'\n)\nON CONFLICT (report_week_start)\nDO UPDATE SET\n    report_week_end = EXCLUDED.report_week_end,\n    total_available_capacity_hours = EXCLUDED.total_available_capacity_hours,\n    total_demand_hours = EXCLUDED.total_demand_hours,\n    portfolio_utilization_pct = EXCLUDED.portfolio_utilization_pct,\n    overloaded_resources = EXCLUDED.overloaded_resources,\n    critical_resources = EXCLUDED.critical_resources,\n    recommendations_created = EXCLUDED.recommendations_created,\n    decisions_approved = EXCLUDED.decisions_approved,\n    decisions_rejected = EXCLUDED.decisions_rejected,\n    pending_approvals = EXCLUDED.pending_approvals,\n    conflicts_without_decision = EXCLUDED.conflicts_without_decision,\n    report_status = 'Generated',\n    generated_at = CURRENT_TIMESTAMP\nRETURNING *;",
+        "options": {
+          "queryReplacement": "={{ [   $json.report.capacity_week_start,   $json.report.portfolio.total_available_capacity_hours,   $json.report.portfolio.total_demand_hours,   $json.report.portfolio.portfolio_utilization_pct,   $json.report.portfolio.overloaded_resources,   $json.report.portfolio.critical_resources,   $json.report.governance_activity.recommendations_created,   $json.report.governance_activity.decisions_approved,   $json.report.governance_activity.decisions_rejected,   $json.report.governance_current_state.pending_approvals,   $json.report.governance_current_state.conflicts_without_decision ] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        1328,
+        160
+      ],
+      "id": "45905aca-4869-4c23-b39c-ac9c6e5a724d",
+      "name": "Store Weekly Capacity Snapshot",
+      "credentials": {
+        "postgres": {
+          "id": "nt4wxwkKIfBcVIkX",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const reportId =\n  Number($node[\"Store Weekly Capacity Snapshot\"].json.report_id);\n\nconst exceptions =\n  $node[\"Build Weekly Capacity Report Payload\"].json.report.exceptions;\n\nreturn exceptions.map(e => ({\n  json: {\n    report_id: reportId,\n    resource_id: e.resource_id,\n    conflict_id: e.conflict_id ? Number(e.conflict_id) : null,\n    utilization_pct: Number(e.utilization_pct),\n    overallocation_hours: Number(e.overallocation_hours),\n    severity: e.severity,\n    governance_status: e.governance_status,\n    decision_status: e.approval_status || null\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1552,
+        160
+      ],
+      "id": "0dc67289-e6ca-41f7-b3ea-af81c945e58e",
+      "name": "Prepare Weekly Exception Snapshots"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO weekly_capacity_report_exceptions (\n    report_id,\n    resource_id,\n    conflict_id,\n    utilization_pct,\n    overallocation_hours,\n    severity,\n    governance_status,\n    decision_status\n)\nVALUES (\n    $1,$2,$3,$4,$5,$6,$7,$8\n)\nON CONFLICT (report_id, resource_id, conflict_id)\nDO UPDATE SET\n    utilization_pct = EXCLUDED.utilization_pct,\n    overallocation_hours = EXCLUDED.overallocation_hours,\n    severity = EXCLUDED.severity,\n    governance_status = EXCLUDED.governance_status,\n    decision_status = EXCLUDED.decision_status\nRETURNING report_exception_id;",
+        "options": {
+          "queryReplacement": "={{ [   $json.report_id,   $json.resource_id,   $json.conflict_id,   $json.utilization_pct,   $json.overallocation_hours,   $json.severity,   $json.governance_status,   $json.decision_status ] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.7,
+      "position": [
+        1776,
+        160
+      ],
+      "id": "68d0add1-23c1-474b-8762-f88e9cb167a6",
+      "name": "Store Weekly Exception Snapshots",
+      "credentials": {
+        "postgres": {
+          "id": "nt4wxwkKIfBcVIkX",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const report =\n  $node[\"Build Weekly Capacity Report Payload\"].json.report;\n\nconst exceptionsHtml = report.exceptions.map((e, i) => `\n  <tr>\n    <td>${i + 1}</td>\n    <td>${e.resource_name}</td>\n    <td>${e.role}</td>\n    <td>${e.utilization_pct}%</td>\n    <td>${e.overallocation_hours}h</td>\n    <td>${e.severity}</td>\n    <td>${e.governance_status}</td>\n    <td>${e.decision_owner || 'Not Assigned'}</td>\n  </tr>\n`).join('');\n\nconst html = `\n<h2>Weekly Portfolio Resource Capacity Report</h2>\n\n<p>\n  <strong>Capacity Week:</strong> ${report.capacity_week_start}<br>\n  <strong>Governance Week:</strong> ${report.governance_week_start}\n</p>\n\n<h3>Portfolio Summary</h3>\n<table border=\"1\" cellpadding=\"6\" cellspacing=\"0\" style=\"border-collapse:collapse;\">\n  <tr><td><strong>Available Capacity</strong></td><td>${report.portfolio.total_available_capacity_hours}h</td></tr>\n  <tr><td><strong>Total Demand</strong></td><td>${report.portfolio.total_demand_hours}h</td></tr>\n  <tr><td><strong>Portfolio Utilization</strong></td><td>${report.portfolio.portfolio_utilization_pct}%</td></tr>\n  <tr><td><strong>Overloaded Resources</strong></td><td>${report.portfolio.overloaded_resources}</td></tr>\n  <tr><td><strong>Critical Resources</strong></td><td>${report.portfolio.critical_resources}</td></tr>\n</table>\n\n<h3>Current Governance Position</h3>\n<table border=\"1\" cellpadding=\"6\" cellspacing=\"0\" style=\"border-collapse:collapse;\">\n  <tr><td><strong>Pending Approvals</strong></td><td>${report.governance_current_state.pending_approvals}</td></tr>\n  <tr><td><strong>Approved Mitigations</strong></td><td>${report.governance_current_state.approved_mitigations}</td></tr>\n  <tr><td><strong>Rejected Mitigations</strong></td><td>${report.governance_current_state.rejected_mitigations}</td></tr>\n  <tr><td><strong>Conflicts Without Decision</strong></td><td>${report.governance_current_state.conflicts_without_decision}</td></tr>\n</table>\n\n<h3>Governance Activity</h3>\n<table border=\"1\" cellpadding=\"6\" cellspacing=\"0\" style=\"border-collapse:collapse;\">\n  <tr><td><strong>Recommendations Created</strong></td><td>${report.governance_activity.recommendations_created}</td></tr>\n  <tr><td><strong>Decisions Approved</strong></td><td>${report.governance_activity.decisions_approved}</td></tr>\n  <tr><td><strong>Decisions Rejected</strong></td><td>${report.governance_activity.decisions_rejected}</td></tr>\n  <tr><td><strong>Decisions Touched</strong></td><td>${report.governance_activity.decisions_touched}</td></tr>\n  <tr><td><strong>Conflicts Touched</strong></td><td>${report.governance_activity.conflicts_touched}</td></tr>\n  <tr><td><strong>Governance Events</strong></td><td>${report.governance_activity.governance_events}</td></tr>\n</table>\n\n<h3>Management Exceptions</h3>\n<table border=\"1\" cellpadding=\"6\" cellspacing=\"0\" style=\"border-collapse:collapse;\">\n  <tr>\n    <th>#</th>\n    <th>Resource</th>\n    <th>Role</th>\n    <th>Utilization</th>\n    <th>Overload</th>\n    <th>Severity</th>\n    <th>Governance Status</th>\n    <th>Decision Owner</th>\n  </tr>\n  ${exceptionsHtml}\n</table>\n\n<h3>Management Attention</h3>\n<ul>\n  <li>Prioritize unresolved Critical and High resource conflicts.</li>\n  <li>Approved mitigations remain open until allocation changes are implemented and utilization is recalculated.</li>\n  <li>Conflicts without a decision require governance ownership.</li>\n</ul>\n`;\n\nreturn [{\n  json: {\n    subject: `Weekly Resource Capacity Report - ${report.capacity_week_start}`,\n    html\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        160
+      ],
+      "id": "2be6a825-e1a7-4a82-9bb3-f97836927c10",
+      "name": "Prepare Weekly Report Email"
+    },
+    {
+      "parameters": {
+        "sendTo": "aziz.syed666@gmail.com",
+        "subject": "=Subject: {{ $json.subject }}",
+        "message": "=Message: {{ $json.html }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2224,
+        160
+      ],
+      "id": "99752ec1-2aa3-4e9b-919f-b810f965e263",
+      "name": "Send a message",
+      "webhookId": "ac6d4274-f505-43be-8b9e-5e5c02c4aa67",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "1B4OTuHX3KHjQQ5m",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Latest Reporting Week",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Governance Reporting Period",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Latest Reporting Week": {
+      "main": [
+        [
+          {
+            "node": "Get Weekly Capacity Exceptions",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Weekly Portfolio Capacity Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Weekly Portfolio Capacity Summary": {
+      "main": [
+        [
+          {
+            "node": "Merge Weekly Report Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Governance Reporting Period": {
+      "main": [
+        [
+          {
+            "node": "Get Weekly Governance Activity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Weekly Governance Activity": {
+      "main": [
+        [
+          {
+            "node": "Merge Weekly Report Data",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Get Weekly Capacity Exceptions": {
+      "main": [
+        [
+          {
+            "node": "Merge Weekly Report Data",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Weekly Report Data": {
+      "main": [
+        [
+          {
+            "node": "Build Weekly Capacity Report Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Weekly Capacity Report Payload": {
+      "main": [
+        [
+          {
+            "node": "Store Weekly Capacity Snapshot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Weekly Capacity Snapshot": {
+      "main": [
+        [
+          {
+            "node": "Prepare Weekly Exception Snapshots",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Weekly Exception Snapshots": {
+      "main": [
+        [
+          {
+            "node": "Store Weekly Exception Snapshots",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Weekly Exception Snapshots": {
+      "main": [
+        [
+          {
+            "node": "Prepare Weekly Report Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Weekly Report Email": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "2a69bfd5-564e-4af6-8baf-bdb9acace1b2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ca19ab3d3cdf09f7e55378e9791459a0df6a3c73f10d678dcea7dbd2b88e0b7a"
+  },
+  "nodeGroups": [],
+  "id": "26cSzEaFE37ZqPt6",
+  "tags": []
+}
